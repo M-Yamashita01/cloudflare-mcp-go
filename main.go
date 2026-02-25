@@ -16,9 +16,9 @@ import (
 const cloudflareAPIBase = "https://api.cloudflare.com/client/v4"
 
 type ListZonesInput struct {
-	Name    string `json:"name,omitempty" jsonschema:"description=A domain name to filter zones by (optional)"`
-	Page    int    `json:"page,omitempty" jsonschema:"description=Page number of paginated results (default: 1)"`
-	PerPage int    `json:"per_page,omitempty" jsonschema:"description=Number of zones per page (default: 20, max: 50)"`
+	Name    string `json:"name,omitempty" jsonschema:"A domain name to filter zones by"`
+	Page    int    `json:"page,omitempty" jsonschema:"Page number of paginated results (default: 1)"`
+	PerPage int    `json:"per_page,omitempty" jsonschema:"Number of zones per page (default: 20, max: 50)"`
 }
 
 type CloudflareResponse struct {
@@ -68,7 +68,7 @@ func listZones(ctx context.Context, req *mcp.CallToolRequest, input ListZonesInp
 	if err != nil {
 		return nil, nil, fmt.Errorf("calling Cloudflare API: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
