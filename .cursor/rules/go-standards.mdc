@@ -1,0 +1,39 @@
+---
+description: Go coding standards and best practices
+globs: "**/*.go"
+alwaysApply: false
+---
+
+# Go Coding Standards
+
+## Error Handling
+
+- Always handle errors explicitly. Never ignore returned errors.
+- Wrap errors with context using `fmt.Errorf("...: %w", err)`.
+
+```go
+// BAD
+result, _ := doSomething()
+
+// GOOD
+result, err := doSomething()
+if err != nil {
+    return fmt.Errorf("failed to do something: %w", err)
+}
+```
+
+## Naming
+
+- Follow standard Go naming conventions (camelCase for unexported, PascalCase for exported).
+- Use descriptive variable names; avoid single-letter names except in short loops or well-known idioms (`i`, `ctx`, `err`).
+
+## Formatting
+
+- Use `gofmt` / `goimports` for all formatting.
+- Group imports: stdlib, external, local (`github.com/M-Yamashita01/cloudflare-mcp-go`).
+
+## Testing
+
+- Place tests in `_test.go` files alongside the source.
+- Use table-driven tests where applicable.
+- Test function names should follow `TestFunctionName_Scenario` pattern.

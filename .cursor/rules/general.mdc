@@ -1,0 +1,25 @@
+---
+description: General project conventions for cloudflare-mcp-go
+alwaysApply: true
+---
+
+# General Project Conventions
+
+## Language
+
+- All code, comments, commit messages, and PR descriptions must be written in English.
+
+## Project Overview
+
+- This is a Go project implementing an MCP (Model Context Protocol) server for Cloudflare.
+- Module path: `github.com/M-Yamashita01/cloudflare-mcp-go`
+
+## Git Conventions
+
+- Use conventional commit prefixes: `feat:`, `fix:`, `chore:`, `ci:`, `docs:`, `refactor:`, `test:`
+- Keep commit messages concise and descriptive.
+
+## Code Quality
+
+- Run `golangci-lint` before committing. The project uses: errcheck, govet, staticcheck, unused, ineffassign, gosimple, gofmt, goimports, misspell.
+- Use `goimports` with local prefix `github.com/M-Yamashita01/cloudflare-mcp-go`.
