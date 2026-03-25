@@ -163,6 +163,59 @@ func getZone(ctx context.Context, _ *mcp.CallToolRequest, input GetZoneInput) (*
 	return result, nil, nil
 }
 
+// --- list_dns_records ---
+
+type ListDNSRecordsInput struct {
+	ZoneID  string `json:"zone_id"            jsonschema:"required,The ID of the zone"`
+	Type    string `json:"type,omitempty"     jsonschema:"DNS record type to filter by (A, AAAA, CNAME, TXT, MX, etc.)"`
+	Name    string `json:"name,omitempty"     jsonschema:"DNS record name to filter by"`
+	Content string `json:"content,omitempty"  jsonschema:"DNS record content to filter by"`
+	Page    int    `json:"page,omitempty"     jsonschema:"Page number of paginated results (default: 1)"`
+	PerPage int    `json:"per_page,omitempty" jsonschema:"Number of records per page (default: 100, max: 5000)"`
+}
+
+func listDNSRecords(ctx context.Context, _ *mcp.CallToolRequest, input ListDNSRecordsInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := checkToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	url := cloudflareAPIBase + "/zones/" + input.ZoneID + "/dns_records"
+	var params []string
+	if input.Type != "" {
+		params = append(params, fmt.Sprintf("type=%s", input.Type))
+	}
+	if input.Name != "" {
+		params = append(params, fmt.Sprintf("name=%s", input.Name))
+	}
+	if input.Content != "" {
+		params = append(params, fmt.Sprintf("content=%s", input.Content))
+	}
+	if input.Page > 0 {
+		params = append(params, fmt.Sprintf("page=%d", input.Page))
+	}
+	if input.PerPage > 0 {
+		params = append(params, fmt.Sprintf("per_page=%d", input.PerPage))
+	}
+	if len(params) > 0 {
+		url += "?" + strings.Join(params, "&")
+	}
+
+	cfResp, err := doCloudflareRequest(ctx, http.MethodGet, url, apiToken, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	if !cfResp.Success {
+		return apiErrorResult(cfResp.Errors), nil, nil
+	}
+
+	result, err := formatResult(cfResp)
+	if err != nil {
+		return nil, nil, err
+	}
+	return result, nil, nil
+}
+
 func main() {
 	server := mcp.NewServer(
 		&mcp.Implementation{
@@ -181,6 +234,11 @@ func main() {
 		Name:        "get_zone",
 		Description: "Get details of a specific Cloudflare zone. Returns zone details such as ID, name, status, and plan.",
 	}, getZone)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "list_dns_records",
+		Description: "List DNS records for a Cloudflare zone. Returns record details such as ID, type, name, content, TTL, and proxy status.",
+	}, listDNSRecords)
 
 	log.Println("Starting Cloudflare MCP server (stdio)...")
 	if err := server.Run(context.Background(), &mcp.StdioTransport{}); err != nil {
