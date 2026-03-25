@@ -164,6 +164,61 @@ func getZone(ctx context.Context, _ *mcp.CallToolRequest, input GetZoneInput) (*
 	return result, nil, nil
 }
 
+// --- delete_dns_record ---
+
+type DeleteDNSRecordInput struct {
+	ZoneID      string `json:"zone_id"       jsonschema:"required,The ID of the zone"`
+	DNSRecordID string `json:"dns_record_id" jsonschema:"required,The ID of the DNS record to delete"`
+}
+
+func deleteDNSRecord(ctx context.Context, _ *mcp.CallToolRequest, input DeleteDNSRecordInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := checkToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	url := cloudflareAPIBase + "/zones/" + input.ZoneID + "/dns_records/" + input.DNSRecordID
+
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodDelete, url, nil)
+	if err != nil {
+		return nil, nil, fmt.Errorf("creating request: %w", err)
+	}
+	httpReq.Header.Set("Authorization", "Bearer "+apiToken)
+	httpReq.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(httpReq)
+	if err != nil {
+		return nil, nil, fmt.Errorf("calling Cloudflare API: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	// Handle 204 No Content (no body to parse)
+	if resp.StatusCode == http.StatusNoContent {
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{&mcp.TextContent{Text: "DNS record deleted successfully"}},
+		}, nil, nil
+	}
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, nil, fmt.Errorf("reading response body: %w", err)
+	}
+
+	var cfResp CloudflareResponse
+	if err := json.Unmarshal(respBody, &cfResp); err != nil {
+		return nil, nil, fmt.Errorf("parsing response: %w", err)
+	}
+	if !cfResp.Success {
+		return apiErrorResult(cfResp.Errors), nil, nil
+	}
+
+	result, err := formatResult(&cfResp)
+	if err != nil {
+		return nil, nil, err
+	}
+	return result, nil, nil
+}
+
 // --- update_dns_record ---
 
 type UpdateDNSRecordInput struct {
@@ -353,6 +408,11 @@ func main() {
 		Name:        "get_zone",
 		Description: "Get details of a specific Cloudflare zone. Returns zone details such as ID, name, status, and plan.",
 	}, getZone)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "delete_dns_record",
+		Description: "Delete a DNS record from a Cloudflare zone.",
+	}, deleteDNSRecord)
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "update_dns_record",
