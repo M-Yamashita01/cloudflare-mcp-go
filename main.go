@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -163,6 +164,66 @@ func getZone(ctx context.Context, _ *mcp.CallToolRequest, input GetZoneInput) (*
 	return result, nil, nil
 }
 
+// --- create_dns_record ---
+
+type CreateDNSRecordInput struct {
+	ZoneID   string `json:"zone_id"            jsonschema:"required,The ID of the zone"`
+	Type     string `json:"type"               jsonschema:"required,DNS record type (A, AAAA, CNAME, TXT, MX, NS, etc.)"`
+	Name     string `json:"name"               jsonschema:"required,DNS record name (e.g. example.com)"`
+	Content  string `json:"content"            jsonschema:"required,DNS record content (e.g. IP address for A records)"`
+	TTL      int    `json:"ttl,omitempty"      jsonschema:"Time to live in seconds (1=automatic, 60-86400)"`
+	Proxied  *bool  `json:"proxied,omitempty"  jsonschema:"Whether the record is proxied through Cloudflare"`
+	Priority int    `json:"priority,omitempty" jsonschema:"Priority for MX and URI records (1-65535)"`
+	Comment  string `json:"comment,omitempty"  jsonschema:"Comment for the DNS record"`
+}
+
+type createDNSRecordRequest struct {
+	Type     string `json:"type"`
+	Name     string `json:"name"`
+	Content  string `json:"content"`
+	TTL      int    `json:"ttl,omitempty"`
+	Proxied  *bool  `json:"proxied,omitempty"`
+	Priority int    `json:"priority,omitempty"`
+	Comment  string `json:"comment,omitempty"`
+}
+
+func createDNSRecord(ctx context.Context, _ *mcp.CallToolRequest, input CreateDNSRecordInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := checkToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	url := cloudflareAPIBase + "/zones/" + input.ZoneID + "/dns_records"
+
+	reqBody := createDNSRecordRequest{
+		Type:     input.Type,
+		Name:     input.Name,
+		Content:  input.Content,
+		TTL:      input.TTL,
+		Proxied:  input.Proxied,
+		Priority: input.Priority,
+		Comment:  input.Comment,
+	}
+	bodyBytes, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, nil, fmt.Errorf("marshaling request body: %w", err)
+	}
+
+	cfResp, err := doCloudflareRequest(ctx, http.MethodPost, url, apiToken, bytes.NewBuffer(bodyBytes))
+	if err != nil {
+		return nil, nil, err
+	}
+	if !cfResp.Success {
+		return apiErrorResult(cfResp.Errors), nil, nil
+	}
+
+	result, err := formatResult(cfResp)
+	if err != nil {
+		return nil, nil, err
+	}
+	return result, nil, nil
+}
+
 // --- list_dns_records ---
 
 type ListDNSRecordsInput struct {
@@ -234,6 +295,11 @@ func main() {
 		Name:        "get_zone",
 		Description: "Get details of a specific Cloudflare zone. Returns zone details such as ID, name, status, and plan.",
 	}, getZone)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "create_dns_record",
+		Description: "Create a new DNS record in a Cloudflare zone. Returns the created record details such as ID, type, name, content, TTL, and proxy status.",
+	}, createDNSRecord)
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "list_dns_records",
