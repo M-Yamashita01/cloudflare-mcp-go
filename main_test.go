@@ -64,6 +64,25 @@ func TestListDNSRecordsInput_defaults(t *testing.T) {
 	}
 }
 
+func TestListKVNamespaces_missingToken(t *testing.T) {
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	result, _, err := listKVNamespaces(context.Background(), &mcp.CallToolRequest{}, ListKVNamespacesInput{AccountID: "acc123"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Fatal("expected IsError to be true when token is missing")
+	}
+}
+
+func TestListKVNamespacesInput_defaults(t *testing.T) {
+	input := ListKVNamespacesInput{}
+	if input.AccountID != "" || input.Page != 0 || input.PerPage != 0 || input.Order != "" || input.Direction != "" {
+		t.Fatal("expected zero values for default ListKVNamespacesInput")
+	}
+}
+
 func TestListAccounts_missingToken(t *testing.T) {
 	t.Setenv("CLOUDFLARE_API_TOKEN", "")
 
