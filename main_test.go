@@ -63,3 +63,50 @@ func TestListDNSRecordsInput_defaults(t *testing.T) {
 		t.Fatal("expected zero values for default ListDNSRecordsInput")
 	}
 }
+
+func TestDeleteDNSRecord_missingToken(t *testing.T) {
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	result, _, err := deleteDNSRecord(context.Background(), &mcp.CallToolRequest{}, DeleteDNSRecordInput{
+		ZoneID:      "abc123",
+		DNSRecordID: "rec456",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Fatal("expected IsError to be true when token is missing")
+	}
+}
+
+func TestUpdateDNSRecord_missingToken(t *testing.T) {
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	result, _, err := updateDNSRecord(context.Background(), &mcp.CallToolRequest{}, UpdateDNSRecordInput{
+		ZoneID:      "abc123",
+		DNSRecordID: "rec456",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Fatal("expected IsError to be true when token is missing")
+	}
+}
+
+func TestCreateDNSRecord_missingToken(t *testing.T) {
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	result, _, err := createDNSRecord(context.Background(), &mcp.CallToolRequest{}, CreateDNSRecordInput{
+		ZoneID:  "abc123",
+		Type:    "A",
+		Name:    "example.com",
+		Content: "1.2.3.4",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Fatal("expected IsError to be true when token is missing")
+	}
+}
