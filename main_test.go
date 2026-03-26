@@ -44,3 +44,22 @@ func TestGetZoneInput_required(t *testing.T) {
 		t.Fatal("expected zero value for default GetZoneInput.ZoneID")
 	}
 }
+
+func TestListDNSRecords_missingToken(t *testing.T) {
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	result, _, err := listDNSRecords(context.Background(), &mcp.CallToolRequest{}, ListDNSRecordsInput{ZoneID: "abc123"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Fatal("expected IsError to be true when token is missing")
+	}
+}
+
+func TestListDNSRecordsInput_defaults(t *testing.T) {
+	input := ListDNSRecordsInput{}
+	if input.ZoneID != "" || input.Type != "" || input.Name != "" || input.Content != "" || input.Page != 0 || input.PerPage != 0 {
+		t.Fatal("expected zero values for default ListDNSRecordsInput")
+	}
+}
