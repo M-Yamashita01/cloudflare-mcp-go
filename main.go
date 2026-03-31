@@ -216,6 +216,59 @@ func listDNSRecords(ctx context.Context, _ *mcp.CallToolRequest, input ListDNSRe
 	return result, nil, nil
 }
 
+// --- list_r2_buckets ---
+
+type ListR2BucketsInput struct {
+	AccountID    string `json:"account_id"              jsonschema:"required,The ID of the Cloudflare account"`
+	NameContains string `json:"name_contains,omitempty" jsonschema:"Filter buckets whose name contains this substring"`
+	StartAfter   string `json:"start_after,omitempty"   jsonschema:"Pagination cursor: return buckets after this bucket name"`
+	PerPage      int    `json:"per_page,omitempty"      jsonschema:"Number of buckets per page (max: 1000)"`
+	Direction    string `json:"direction,omitempty"     jsonschema:"Sort direction: asc or desc"`
+	Jurisdiction string `json:"jurisdiction,omitempty"  jsonschema:"Filter by jurisdiction: default, eu, or fedramp"`
+}
+
+func listR2Buckets(ctx context.Context, _ *mcp.CallToolRequest, input ListR2BucketsInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := checkToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	url := cloudflareAPIBase + "/accounts/" + input.AccountID + "/r2/buckets"
+	var params []string
+	if input.NameContains != "" {
+		params = append(params, fmt.Sprintf("name_contains=%s", input.NameContains))
+	}
+	if input.StartAfter != "" {
+		params = append(params, fmt.Sprintf("start_after=%s", input.StartAfter))
+	}
+	if input.PerPage > 0 {
+		params = append(params, fmt.Sprintf("per_page=%d", input.PerPage))
+	}
+	if input.Direction != "" {
+		params = append(params, fmt.Sprintf("direction=%s", input.Direction))
+	}
+	if input.Jurisdiction != "" {
+		params = append(params, fmt.Sprintf("jurisdiction=%s", input.Jurisdiction))
+	}
+	if len(params) > 0 {
+		url += "?" + strings.Join(params, "&")
+	}
+
+	cfResp, err := doCloudflareRequest(ctx, http.MethodGet, url, apiToken, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	if !cfResp.Success {
+		return apiErrorResult(cfResp.Errors), nil, nil
+	}
+
+	result, err := formatResult(cfResp)
+	if err != nil {
+		return nil, nil, err
+	}
+	return result, nil, nil
+}
+
 func main() {
 	server := mcp.NewServer(
 		&mcp.Implementation{
@@ -234,6 +287,11 @@ func main() {
 		Name:        "get_zone",
 		Description: "Get details of a specific Cloudflare zone. Returns zone details such as ID, name, status, and plan.",
 	}, getZone)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "list_r2_buckets",
+		Description: "List R2 buckets in a Cloudflare account. Returns bucket details such as name, creation date, and location.",
+	}, listR2Buckets)
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "list_dns_records",
