@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -338,6 +339,142 @@ func listWAFManagedRulesets(ctx context.Context, _ *mcp.CallToolRequest, input L
 	return result, nil, nil
 }
 
+// --- query_security_events ---
+
+type QuerySecurityEventsInput struct {
+	ZoneID   string `json:"zone_id"          jsonschema:"required,The ID of the zone"`
+	DateFrom string `json:"date_from"         jsonschema:"required,Start datetime in RFC3339 format (e.g. 2026-03-23T08:19:58Z)"`
+	DateTo   string `json:"date_to"           jsonschema:"required,End datetime in RFC3339 format"`
+	Source   string `json:"source,omitempty"  jsonschema:"Filter by mitigation source: firewallManaged, bic, hot, rateLimit, securitylevel, uaBlock, waf"`
+	Limit    int    `json:"limit,omitempty"   jsonschema:"Max number of events to return (default: 100, max: 10000)"`
+}
+
+// graphqlResponse is the top-level GraphQL response envelope.
+type graphqlResponse struct {
+	Data   json.RawMessage `json:"data"`
+	Errors []graphqlError  `json:"errors"`
+}
+
+type graphqlError struct {
+	Message string `json:"message"`
+}
+
+func querySecurityEvents(ctx context.Context, _ *mcp.CallToolRequest, input QuerySecurityEventsInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := checkToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	limit := input.Limit
+	if limit <= 0 {
+		limit = 100
+	}
+
+	// Build the filter object conditionally.
+	type filterObj struct {
+		DatetimeGeq string `json:"datetime_geq"`
+		DatetimeLt  string `json:"datetime_lt"`
+		Source      string `json:"source,omitempty"`
+	}
+	filter := filterObj{
+		DatetimeGeq: input.DateFrom,
+		DatetimeLt:  input.DateTo,
+		Source:      input.Source,
+	}
+
+	type variables struct {
+		ZoneTag string    `json:"zoneTag"`
+		Filter  filterObj `json:"filter"`
+		Limit   int       `json:"limit"`
+	}
+
+	const query = `
+query SecurityEvents($zoneTag: String!, $filter: FirewallEventsAdaptiveFilter_InputObject, $limit: Int) {
+  viewer {
+    zones(filter: { zoneTag: $zoneTag }) {
+      firewallEventsAdaptive(
+        filter: $filter
+        limit: $limit
+        orderBy: [datetime_DESC]
+      ) {
+        action
+        clientAsn
+        clientCountryName
+        clientIP
+        clientRequestHTTPHost
+        clientRequestHTTPMethodName
+        clientRequestPath
+        clientRequestQuery
+        datetime
+        description
+        ruleId
+        source
+        userAgent
+      }
+    }
+  }
+}`
+
+	reqBody := struct {
+		Query     string    `json:"query"`
+		Variables variables `json:"variables"`
+	}{
+		Query: query,
+		Variables: variables{
+			ZoneTag: input.ZoneID,
+			Filter:  filter,
+			Limit:   limit,
+		},
+	}
+
+	bodyBytes, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, nil, fmt.Errorf("marshaling GraphQL request: %w", err)
+	}
+
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, cloudflareAPIBase+"/graphql", bytes.NewBuffer(bodyBytes))
+	if err != nil {
+		return nil, nil, fmt.Errorf("creating request: %w", err)
+	}
+	httpReq.Header.Set("Authorization", "Bearer "+apiToken)
+	httpReq.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(httpReq)
+	if err != nil {
+		return nil, nil, fmt.Errorf("calling Cloudflare GraphQL API: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, nil, fmt.Errorf("reading response body: %w", err)
+	}
+
+	var gqlResp graphqlResponse
+	if err := json.Unmarshal(respBody, &gqlResp); err != nil {
+		return nil, nil, fmt.Errorf("parsing GraphQL response: %w", err)
+	}
+
+	if len(gqlResp.Errors) > 0 {
+		var msgs []string
+		for _, e := range gqlResp.Errors {
+			msgs = append(msgs, e.Message)
+		}
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{&mcp.TextContent{Text: "GraphQL error: " + strings.Join(msgs, "; ")}},
+			IsError: true,
+		}, nil, nil
+	}
+
+	formatted, err := json.MarshalIndent(gqlResp.Data, "", "  ")
+	if err != nil {
+		return nil, nil, fmt.Errorf("formatting result: %w", err)
+	}
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{&mcp.TextContent{Text: string(formatted)}},
+	}, nil, nil
+}
+
 // --- list_kv_namespaces ---
 
 type ListKVNamespacesInput struct {
@@ -430,6 +567,11 @@ func main() {
 		Name:        "list_ip_access_rules",
 		Description: "List IP access rules for a Cloudflare zone. Returns rules that block, challenge, or allow specific IPs, CIDRs, ASNs, or countries.",
 	}, listIPAccessRules)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "query_security_events",
+		Description: "Query WAF and firewall security events for a Cloudflare zone using the GraphQL Analytics API. Returns event details such as client IP, action, rule ID, request path, and source service.",
+	}, querySecurityEvents)
 
 	log.Println("Starting Cloudflare MCP server (stdio)...")
 	if err := server.Run(context.Background(), &mcp.StdioTransport{}); err != nil {
