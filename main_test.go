@@ -102,6 +102,29 @@ func TestListKVNamespacesInput_defaults(t *testing.T) {
 	}
 }
 
+func TestQuerySecurityEvents_missingToken(t *testing.T) {
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	result, _, err := querySecurityEvents(context.Background(), &mcp.CallToolRequest{}, QuerySecurityEventsInput{
+		ZoneID:   "abc123",
+		DateFrom: "2026-03-23T08:19:58Z",
+		DateTo:   "2026-03-23T08:20:58Z",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Fatal("expected IsError to be true when token is missing")
+	}
+}
+
+func TestQuerySecurityEventsInput_defaults(t *testing.T) {
+	input := QuerySecurityEventsInput{}
+	if input.ZoneID != "" || input.DateFrom != "" || input.DateTo != "" || input.Source != "" || input.Limit != 0 {
+		t.Fatal("expected zero values for default QuerySecurityEventsInput")
+	}
+}
+
 func TestListIPAccessRules_missingToken(t *testing.T) {
 	t.Setenv("CLOUDFLARE_API_TOKEN", "")
 
