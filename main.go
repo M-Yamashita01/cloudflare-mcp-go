@@ -260,6 +260,35 @@ func listAccounts(ctx context.Context, _ *mcp.CallToolRequest, input ListAccount
 	return result, nil, nil
 }
 
+// --- list_waf_managed_rulesets ---
+
+type ListWAFManagedRulesetsInput struct {
+	ZoneID string `json:"zone_id" jsonschema:"required,The ID of the zone"`
+}
+
+func listWAFManagedRulesets(ctx context.Context, _ *mcp.CallToolRequest, input ListWAFManagedRulesetsInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := checkToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	url := cloudflareAPIBase + "/zones/" + input.ZoneID + "/rulesets/phases/http_request_firewall_managed/entrypoint"
+
+	cfResp, err := doCloudflareRequest(ctx, http.MethodGet, url, apiToken, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	if !cfResp.Success {
+		return apiErrorResult(cfResp.Errors), nil, nil
+	}
+
+	result, err := formatResult(cfResp)
+	if err != nil {
+		return nil, nil, err
+	}
+	return result, nil, nil
+}
+
 // --- list_kv_namespaces ---
 
 type ListKVNamespacesInput struct {
@@ -342,6 +371,11 @@ func main() {
 		Name:        "list_dns_records",
 		Description: "List DNS records for a Cloudflare zone. Returns record details such as ID, type, name, content, TTL, and proxy status.",
 	}, listDNSRecords)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "list_waf_managed_rulesets",
+		Description: "Get the WAF managed rulesets entrypoint for a Cloudflare zone. Returns which managed rulesets (e.g. Cloudflare Managed Ruleset, OWASP) are enabled and their configuration.",
+	}, listWAFManagedRulesets)
 
 	log.Println("Starting Cloudflare MCP server (stdio)...")
 	if err := server.Run(context.Background(), &mcp.StdioTransport{}); err != nil {

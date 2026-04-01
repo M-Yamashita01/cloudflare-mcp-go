@@ -101,3 +101,22 @@ func TestListKVNamespacesInput_defaults(t *testing.T) {
 		t.Fatal("expected zero values for default ListKVNamespacesInput")
 	}
 }
+
+func TestListWAFManagedRulesets_missingToken(t *testing.T) {
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	result, _, err := listWAFManagedRulesets(context.Background(), &mcp.CallToolRequest{}, ListWAFManagedRulesetsInput{ZoneID: "abc123"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Fatal("expected IsError to be true when token is missing")
+	}
+}
+
+func TestListWAFManagedRulesetsInput_required(t *testing.T) {
+	input := ListWAFManagedRulesetsInput{}
+	if input.ZoneID != "" {
+		t.Fatal("expected zero value for default ListWAFManagedRulesetsInput.ZoneID")
+	}
+}
