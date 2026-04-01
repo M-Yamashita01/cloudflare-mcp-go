@@ -260,6 +260,55 @@ func listAccounts(ctx context.Context, _ *mcp.CallToolRequest, input ListAccount
 	return result, nil, nil
 }
 
+// --- list_ip_access_rules ---
+
+type ListIPAccessRulesInput struct {
+	ZoneID  string `json:"zone_id"            jsonschema:"required,The ID of the zone"`
+	IP      string `json:"ip,omitempty"       jsonschema:"Filter by specific IP address"`
+	Mode    string `json:"mode,omitempty"     jsonschema:"Filter by mode: block, challenge, whitelist, js_challenge"`
+	Page    int    `json:"page,omitempty"     jsonschema:"Page number of paginated results (default: 1)"`
+	PerPage int    `json:"per_page,omitempty" jsonschema:"Number of rules per page (default: 20, max: 1000)"`
+}
+
+func listIPAccessRules(ctx context.Context, _ *mcp.CallToolRequest, input ListIPAccessRulesInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := checkToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	url := cloudflareAPIBase + "/zones/" + input.ZoneID + "/firewall/access_rules/rules"
+	var params []string
+	if input.IP != "" {
+		params = append(params, fmt.Sprintf("configuration.value=%s", input.IP))
+	}
+	if input.Mode != "" {
+		params = append(params, fmt.Sprintf("mode=%s", input.Mode))
+	}
+	if input.Page > 0 {
+		params = append(params, fmt.Sprintf("page=%d", input.Page))
+	}
+	if input.PerPage > 0 {
+		params = append(params, fmt.Sprintf("per_page=%d", input.PerPage))
+	}
+	if len(params) > 0 {
+		url += "?" + strings.Join(params, "&")
+	}
+
+	cfResp, err := doCloudflareRequest(ctx, http.MethodGet, url, apiToken, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	if !cfResp.Success {
+		return apiErrorResult(cfResp.Errors), nil, nil
+	}
+
+	result, err := formatResult(cfResp)
+	if err != nil {
+		return nil, nil, err
+	}
+	return result, nil, nil
+}
+
 // --- list_waf_managed_rulesets ---
 
 type ListWAFManagedRulesetsInput struct {
@@ -376,6 +425,11 @@ func main() {
 		Name:        "list_waf_managed_rulesets",
 		Description: "Get the WAF managed rulesets entrypoint for a Cloudflare zone. Returns which managed rulesets (e.g. Cloudflare Managed Ruleset, OWASP) are enabled and their configuration.",
 	}, listWAFManagedRulesets)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "list_ip_access_rules",
+		Description: "List IP access rules for a Cloudflare zone. Returns rules that block, challenge, or allow specific IPs, CIDRs, ASNs, or countries.",
+	}, listIPAccessRules)
 
 	log.Println("Starting Cloudflare MCP server (stdio)...")
 	if err := server.Run(context.Background(), &mcp.StdioTransport{}); err != nil {
