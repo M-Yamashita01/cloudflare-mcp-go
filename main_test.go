@@ -102,6 +102,25 @@ func TestListKVNamespacesInput_defaults(t *testing.T) {
 	}
 }
 
+func TestListIPAccessRules_missingToken(t *testing.T) {
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	result, _, err := listIPAccessRules(context.Background(), &mcp.CallToolRequest{}, ListIPAccessRulesInput{ZoneID: "abc123"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Fatal("expected IsError to be true when token is missing")
+	}
+}
+
+func TestListIPAccessRulesInput_defaults(t *testing.T) {
+	input := ListIPAccessRulesInput{}
+	if input.ZoneID != "" || input.IP != "" || input.Mode != "" || input.Page != 0 || input.PerPage != 0 {
+		t.Fatal("expected zero values for default ListIPAccessRulesInput")
+	}
+}
+
 func TestListWAFManagedRulesets_missingToken(t *testing.T) {
 	t.Setenv("CLOUDFLARE_API_TOKEN", "")
 
