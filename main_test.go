@@ -120,7 +120,7 @@ func TestQuerySecurityEvents_missingToken(t *testing.T) {
 
 func TestQuerySecurityEventsInput_defaults(t *testing.T) {
 	input := QuerySecurityEventsInput{}
-	if input.ZoneID != "" || input.DateFrom != "" || input.DateTo != "" || input.Source != "" || input.Limit != 0 {
+	if input.ZoneID != "" || input.DateFrom != "" || input.DateTo != "" || input.Source != "" || input.Action != "" || input.ClientIP != "" || input.Host != "" || input.RuleID != "" || input.Country != "" || input.HTTPMethod != "" || input.RequestPath != "" || input.Limit != 0 {
 		t.Fatal("expected zero values for default QuerySecurityEventsInput")
 	}
 }
