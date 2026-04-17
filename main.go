@@ -342,11 +342,18 @@ func listWAFManagedRulesets(ctx context.Context, _ *mcp.CallToolRequest, input L
 // --- query_security_events ---
 
 type QuerySecurityEventsInput struct {
-	ZoneID   string `json:"zone_id"          jsonschema:"required,The ID of the zone"`
-	DateFrom string `json:"date_from"         jsonschema:"required,Start datetime in RFC3339 format (e.g. 2026-03-23T08:19:58Z)"`
-	DateTo   string `json:"date_to"           jsonschema:"required,End datetime in RFC3339 format"`
-	Source   string `json:"source,omitempty"  jsonschema:"Filter by mitigation source: firewallManaged, bic, hot, rateLimit, securitylevel, uaBlock, waf"`
-	Limit    int    `json:"limit,omitempty"   jsonschema:"Max number of events to return (default: 100, max: 10000)"`
+	ZoneID      string `json:"zone_id" jsonschema:"required,The ID of the zone"`
+	DateFrom    string `json:"date_from" jsonschema:"required,Start datetime in RFC3339 format (e.g. 2026-03-23T08:19:58Z)"`
+	DateTo      string `json:"date_to" jsonschema:"required,End datetime in RFC3339 format"`
+	Source      string `json:"source,omitempty" jsonschema:"Filter by mitigation source: firewallManaged, firewallCustom, firewallrules, waf, rateLimit, bic, hot, securitylevel, uablock, ip, iprange, asn, country, zonelockdown, l7ddos, botfight, botmanagement, apishield, apishieldschemavalidation, apishieldtokenvalidation, apishieldsequencemitigation, dlp, validation"`
+	Action      string `json:"action,omitempty" jsonschema:"Filter by action taken: block, challenge, jschallenge, managedchallenge, log, allow, bypass, connectionclose"`
+	ClientIP    string `json:"client_ip,omitempty" jsonschema:"Filter by client IP address"`
+	Host        string `json:"host,omitempty" jsonschema:"Filter by requested HTTP hostname"`
+	RuleID      string `json:"rule_id,omitempty" jsonschema:"Filter by the rule ID that triggered the event"`
+	Country     string `json:"country,omitempty" jsonschema:"Filter by client country name (e.g. US, JP, CN)"`
+	HTTPMethod  string `json:"http_method,omitempty" jsonschema:"Filter by HTTP request method (e.g. GET, POST)"`
+	RequestPath string `json:"request_path,omitempty" jsonschema:"Filter by HTTP request path"`
+	Limit       int    `json:"limit,omitempty" jsonschema:"Max number of events to return (default: 100, max: 10000)"`
 }
 
 // graphqlResponse is the top-level GraphQL response envelope.
@@ -372,14 +379,28 @@ func querySecurityEvents(ctx context.Context, _ *mcp.CallToolRequest, input Quer
 
 	// Build the filter object conditionally.
 	type filterObj struct {
-		DatetimeGeq string `json:"datetime_geq"`
-		DatetimeLt  string `json:"datetime_lt"`
-		Source      string `json:"source,omitempty"`
+		DatetimeGeq                 string `json:"datetime_geq"`
+		DatetimeLt                  string `json:"datetime_lt"`
+		Source                      string `json:"source,omitempty"`
+		Action                      string `json:"action,omitempty"`
+		ClientIP                    string `json:"clientIP,omitempty"`
+		ClientRequestHTTPHost       string `json:"clientRequestHTTPHost,omitempty"`
+		RuleID                      string `json:"ruleId,omitempty"`
+		ClientCountryName           string `json:"clientCountryName,omitempty"`
+		ClientRequestHTTPMethodName string `json:"clientRequestHTTPMethodName,omitempty"`
+		ClientRequestPath           string `json:"clientRequestPath,omitempty"`
 	}
 	filter := filterObj{
-		DatetimeGeq: input.DateFrom,
-		DatetimeLt:  input.DateTo,
-		Source:      input.Source,
+		DatetimeGeq:                 input.DateFrom,
+		DatetimeLt:                  input.DateTo,
+		Source:                      input.Source,
+		Action:                      input.Action,
+		ClientIP:                    input.ClientIP,
+		ClientRequestHTTPHost:       input.Host,
+		RuleID:                      input.RuleID,
+		ClientCountryName:           input.Country,
+		ClientRequestHTTPMethodName: input.HTTPMethod,
+		ClientRequestPath:           input.RequestPath,
 	}
 
 	type variables struct {
