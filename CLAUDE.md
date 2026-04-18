@@ -7,6 +7,30 @@ Cloudflare MCP Go — A Go implementation of an MCP (Model Context Protocol) ser
 - Language: Go 1.23+
 - MCP SDK: `github.com/modelcontextprotocol/go-sdk`
 - Entry point: `main.go`
+- Architecture: See [doc/architecture.md](doc/architecture.md) for detailed design docs
+
+## Project Structure
+
+```
+main.go                          # Thin entry point (server init + RegisterTools)
+internal/
+  cfapi/                         # Shared Cloudflare API client (types + helpers)
+  tool/
+    zone/                        # list_zones, get_zone
+    dns/                         # list_dns_records
+    account/                     # list_accounts
+    kv/                          # list_kv_namespaces
+    security/                    # list_ip_access_rules, list_waf_managed_rulesets, query_security_events
+doc/
+  architecture.md                # Architecture documentation
+```
+
+### Adding a New Tool
+
+1. Create or extend a package under `internal/tool/<domain>/`
+2. Define Input struct + handler function + `RegisterTools()`
+3. Add `<domain>.RegisterTools(server)` in `main.go`
+4. Write co-located tests in `*_test.go`
 
 ## Build & Run
 
