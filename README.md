@@ -4,7 +4,7 @@ An MCP (Model Context Protocol) server for the Cloudflare API, written in Go.
 
 ## Prerequisites
 
-- Go 1.21+
+- Go 1.23+
 - Cloudflare API token
 
 ## Setup
@@ -26,19 +26,28 @@ The server communicates over stdio transport and can be connected to from any MC
 
 ## Available Tools
 
-### list_zones
+| Tool | Description |
+|------|-------------|
+| `list_zones` | List zones in your Cloudflare account |
+| `get_zone` | Get details of a specific zone |
+| `list_dns_records` | List DNS records for a zone |
+| `list_accounts` | List Cloudflare accounts |
+| `list_kv_namespaces` | List Workers KV namespaces |
+| `list_ip_access_rules` | List IP access rules for a zone |
+| `list_waf_managed_rulesets` | Get WAF managed rulesets configuration |
+| `query_security_events` | Query security events via GraphQL Analytics API |
 
-Lists zones in your Cloudflare account.
+## MCP Client Configuration
 
-**Parameters:**
+### Claude Code
 
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| name | string | No | Filter by domain name |
-| page | int | No | Page number of paginated results (default: 1) |
-| per_page | int | No | Number of zones per page (default: 20, max: 50) |
+Add the following to your Claude Code MCP settings:
 
-## MCP Client Configuration Example
+```bash
+claude mcp add cloudflare -- /path/to/cloudflare-mcp-go
+```
+
+Or manually add to your MCP config (e.g., `~/.claude/claude_desktop_config.json`):
 
 ```json
 {
@@ -52,3 +61,42 @@ Lists zones in your Cloudflare account.
   }
 }
 ```
+
+### Claude Desktop
+
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+
+```json
+{
+  "mcpServers": {
+    "cloudflare": {
+      "command": "/path/to/cloudflare-mcp-go",
+      "env": {
+        "CLOUDFLARE_API_TOKEN": "your-api-token"
+      }
+    }
+  }
+}
+```
+
+### Other MCP Clients
+
+Any MCP-compatible client can connect via stdio transport using the same configuration pattern.
+
+## Project Structure
+
+```
+main.go                  # Entry point
+internal/
+  cfapi/                 # Shared Cloudflare API client
+  tool/
+    zone/                # Zone management tools
+    dns/                 # DNS record tools
+    account/             # Account management tools
+    kv/                  # Workers KV tools
+    security/            # Firewall & WAF tools
+doc/
+  architecture.md        # Architecture documentation
+```
+
+See [doc/architecture.md](doc/architecture.md) for detailed design documentation.
