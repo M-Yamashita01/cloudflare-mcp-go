@@ -15,11 +15,13 @@ import (
 	"github.com/M-Yamashita01/cloudflare-mcp-go/internal/tool/zone"
 )
 
+var version = "dev"
+
 func main() {
 	server := mcp.NewServer(
 		&mcp.Implementation{
 			Name:    "cloudflare-mcp-go",
-			Version: "0.1.0",
+			Version: version,
 		},
 		nil,
 	)
