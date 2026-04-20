@@ -169,6 +169,8 @@ query SecurityEvents($zoneTag: String!, $filter: FirewallEventsAdaptiveFilter_In
         orderBy: [datetime_DESC]
       ) {
         action
+        botScore
+        botScoreSrcName
         clientAsn
         clientCountryName
         clientIP
@@ -178,6 +180,8 @@ query SecurityEvents($zoneTag: String!, $filter: FirewallEventsAdaptiveFilter_In
         clientRequestQuery
         datetime
         description
+        edgeResponseStatus
+        originResponseStatus
         ruleId
         source
         userAgent
@@ -260,6 +264,6 @@ func RegisterTools(server *mcp.Server) {
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "query_security_events",
-		Description: "Query WAF and firewall security events for a Cloudflare zone using the GraphQL Analytics API. Returns event details such as client IP, action, rule ID, request path, and source service.",
+		Description: "Query security events for a Cloudflare zone using the GraphQL Analytics API. Returns event details including client info, action taken, rule details, bot score, and response status for security event triage.",
 	}, querySecurityEvents)
 }
