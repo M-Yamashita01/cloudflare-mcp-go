@@ -102,13 +102,13 @@ Follow the [Google Go Style Guide](https://google.github.io/styleguide/go/index)
 
 ## Testing Guidelines — t_wada Style
 
-Follow the testing principles advocated by t_wada (和田卓人).
+Follow the testing principles advocated by t_wada (Takuto Wada).
 
 ### Core Principles
 
 1. **Behavior-based test naming**
-   - Name tests by the behavior under test: `Test_MethodName_振る舞いの日本語記述`
-   - Example: `Test_ListDNSRecords_ゾーンIDが空の場合エラーを返す`
+   - Name tests by the behavior under test: `Test_MethodName_description_of_behavior`
+   - Example: `Test_ListDNSRecords_returns_error_when_zone_id_is_empty`
 
 2. **Boundary value testing**
    - Always test boundary values: `0`, `-1`, empty, exact boundary, boundary+1, etc.
@@ -138,7 +138,7 @@ Follow the testing principles advocated by t_wada (和田卓人).
 ### Test Code Style
 
 ```go
-func Test_MethodName_振る舞いの説明(t *testing.T) {
+func Test_MethodName_description_of_behavior(t *testing.T) {
     // Arrange
     input := "test-input"
     expected := "expected-output"
@@ -158,15 +158,15 @@ func Test_MethodName_振る舞いの説明(t *testing.T) {
 Use table-driven tests for covering equivalence partitions and boundary values:
 
 ```go
-func Test_Validate_境界値(t *testing.T) {
+func Test_Validate_boundary_values(t *testing.T) {
     tests := []struct {
         name    string
         input   int
         wantErr bool
     }{
-        {"境界値ちょうど_0", 0, false},
-        {"境界値マイナス1", -1, true},
-        {"境界値プラス1", 1, false},
+        {"exact_boundary_0", 0, false},
+        {"boundary_minus_1", -1, true},
+        {"boundary_plus_1", 1, false},
     }
     for _, tt := range tests {
         t.Run(tt.name, func(t *testing.T) {
