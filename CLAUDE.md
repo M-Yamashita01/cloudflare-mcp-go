@@ -7,7 +7,7 @@ Cloudflare MCP Go — A Go implementation of an MCP (Model Context Protocol) ser
 - Language: Go 1.23+
 - MCP SDK: `github.com/modelcontextprotocol/go-sdk`
 - Entry point: `main.go`
-- Architecture: See @doc/architecture.md for detailed design docs
+- Architecture: See [doc/architecture.md](doc/architecture.md) for detailed design docs
 
 ## Build & Run
 
@@ -15,7 +15,7 @@ Cloudflare MCP Go — A Go implementation of an MCP (Model Context Protocol) ser
 # Build
 go build -o cloudflare-mcp-go .
 
-# Run (requires CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID env vars)
+# Run (requires CLOUDFLARE_API_TOKEN; CLOUDFLARE_ACCOUNT_ID is optional, needed by some tools)
 go run .
 
 # Test
@@ -51,7 +51,7 @@ Follow the testing principles advocated by t_wada (Takuto Wada).
 - **One assertion per test**: each test should have exactly one reason to fail
 - **Boundary value testing**: always test `0`, `-1`, empty, exact boundary, boundary+1
 - **Table-driven tests** for covering equivalence partitions and boundary values
-- Use `cmp.Equal` / `cmp.Diff` for struct comparisons, not field-by-field checks
+- Prefer whole-value struct comparisons over field-by-field checks when practical
 - Use `got`/`want` ordering in error messages
 - Prefer `t.Error` over `t.Fatal` unless subsequent assertions would be meaningless
 
