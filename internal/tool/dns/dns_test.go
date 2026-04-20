@@ -7,7 +7,7 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-func Test_list_トークンが未設定の場合エラーを返す(t *testing.T) {
+func Test_list_returns_error_when_token_is_not_set(t *testing.T) {
 	// Arrange
 	t.Setenv("CLOUDFLARE_API_TOKEN", "")
 
@@ -23,7 +23,7 @@ func Test_list_トークンが未設定の場合エラーを返す(t *testing.T)
 	}
 }
 
-func Test_ListInput_デフォルト値がゼロ値である(t *testing.T) {
+func Test_ListInput_has_zero_value_defaults(t *testing.T) {
 	// Arrange & Act
 	input := ListInput{}
 
