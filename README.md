@@ -41,10 +41,16 @@ The server communicates over stdio transport and can be connected to from any MC
 
 ### Claude Code
 
-Add the following to your Claude Code MCP settings:
+Install directly from the repository (no manual download required):
 
 ```bash
-claude mcp add cloudflare -- /path/to/cloudflare-mcp-go
+claude mcp add cloudflare -- go run github.com/M-Yamashita01/cloudflare-mcp-go@v0.1.0
+```
+
+Or if you have the repository cloned locally:
+
+```bash
+claude mcp add cloudflare -- go run .
 ```
 
 Or manually add to your MCP config (e.g., `~/.claude/claude_desktop_config.json`):
