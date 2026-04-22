@@ -159,7 +159,7 @@ func querySecurityEvents(ctx context.Context, _ *mcp.CallToolRequest, input Quer
 		Limit   int       `json:"limit"`
 	}
 
-	const query = `
+	const queryWithBotScore = `
 query SecurityEvents($zoneTag: String!, $filter: FirewallEventsAdaptiveFilter_InputObject, $limit: Int) {
   viewer {
     zones(filter: { zoneTag: $zoneTag }) {
@@ -190,44 +190,52 @@ query SecurityEvents($zoneTag: String!, $filter: FirewallEventsAdaptiveFilter_In
   }
 }`
 
-	reqBody := struct {
-		Query     string    `json:"query"`
-		Variables variables `json:"variables"`
-	}{
-		Query: query,
-		Variables: variables{
-			ZoneTag: input.ZoneID,
-			Filter:  filter,
-			Limit:   limit,
-		},
+	const queryWithoutBotScore = `
+query SecurityEvents($zoneTag: String!, $filter: FirewallEventsAdaptiveFilter_InputObject, $limit: Int) {
+  viewer {
+    zones(filter: { zoneTag: $zoneTag }) {
+      firewallEventsAdaptive(
+        filter: $filter
+        limit: $limit
+        orderBy: [datetime_DESC]
+      ) {
+        action
+        clientAsn
+        clientCountryName
+        clientIP
+        clientRequestHTTPHost
+        clientRequestHTTPMethodName
+        clientRequestPath
+        clientRequestQuery
+        datetime
+        description
+        edgeResponseStatus
+        originResponseStatus
+        ruleId
+        source
+        userAgent
+      }
+    }
+  }
+}`
+
+	vars := variables{
+		ZoneTag: input.ZoneID,
+		Filter:  filter,
+		Limit:   limit,
 	}
 
-	bodyBytes, err := json.Marshal(reqBody)
+	// Try with bot score fields first; fall back without them for zones without Bot Management.
+	gqlResp, err := executeGraphQL(ctx, apiToken, queryWithBotScore, vars)
 	if err != nil {
-		return nil, nil, fmt.Errorf("marshaling GraphQL request: %w", err)
+		return nil, nil, err
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, cfapi.APIBase+"/graphql", bytes.NewBuffer(bodyBytes))
-	if err != nil {
-		return nil, nil, fmt.Errorf("creating request: %w", err)
-	}
-	httpReq.Header.Set("Authorization", "Bearer "+apiToken)
-	httpReq.Header.Set("Content-Type", "application/json")
-
-	resp, err := http.DefaultClient.Do(httpReq)
-	if err != nil {
-		return nil, nil, fmt.Errorf("calling Cloudflare GraphQL API: %w", err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, nil, fmt.Errorf("reading response body: %w", err)
-	}
-
-	var gqlResp graphqlResponse
-	if err := json.Unmarshal(respBody, &gqlResp); err != nil {
-		return nil, nil, fmt.Errorf("parsing GraphQL response: %w", err)
+	if hasBotScoreError(gqlResp) {
+		gqlResp, err = executeGraphQL(ctx, apiToken, queryWithoutBotScore, vars)
+		if err != nil {
+			return nil, nil, err
+		}
 	}
 
 	if len(gqlResp.Errors) > 0 {
@@ -248,6 +256,54 @@ query SecurityEvents($zoneTag: String!, $filter: FirewallEventsAdaptiveFilter_In
 	return &mcp.CallToolResult{
 		Content: []mcp.Content{&mcp.TextContent{Text: string(formatted)}},
 	}, nil, nil
+}
+
+func executeGraphQL(ctx context.Context, apiToken string, query string, vars any) (*graphqlResponse, error) {
+	reqBody := struct {
+		Query     string `json:"query"`
+		Variables any    `json:"variables"`
+	}{
+		Query:     query,
+		Variables: vars,
+	}
+
+	bodyBytes, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("marshaling GraphQL request: %w", err)
+	}
+
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, cfapi.APIBase+"/graphql", bytes.NewBuffer(bodyBytes))
+	if err != nil {
+		return nil, fmt.Errorf("creating request: %w", err)
+	}
+	httpReq.Header.Set("Authorization", "Bearer "+apiToken)
+	httpReq.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(httpReq)
+	if err != nil {
+		return nil, fmt.Errorf("calling Cloudflare GraphQL API: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("reading response body: %w", err)
+	}
+
+	var gqlResp graphqlResponse
+	if err := json.Unmarshal(respBody, &gqlResp); err != nil {
+		return nil, fmt.Errorf("parsing GraphQL response: %w", err)
+	}
+	return &gqlResp, nil
+}
+
+func hasBotScoreError(resp *graphqlResponse) bool {
+	for _, e := range resp.Errors {
+		if strings.Contains(e.Message, "botscoresrcname") || strings.Contains(e.Message, "botscore") {
+			return true
+		}
+	}
+	return false
 }
 
 // RegisterTools registers security and firewall tools with the MCP server.

@@ -79,6 +79,70 @@ func Test_querySecurityEvents_returns_error_when_token_is_not_set(t *testing.T) 
 	}
 }
 
+func Test_hasBotScoreError_returns_true_when_error_contains_botscoresrcname(t *testing.T) {
+	// Arrange
+	resp := &graphqlResponse{
+		Errors: []graphqlError{
+			{Message: "zone 'abc' does not have access to the field 'botscoresrcname' from the path"},
+		},
+	}
+
+	// Act
+	got := hasBotScoreError(resp)
+
+	// Assert
+	if !got {
+		t.Error("got false, want true")
+	}
+}
+
+func Test_hasBotScoreError_returns_true_when_error_contains_botscore(t *testing.T) {
+	// Arrange
+	resp := &graphqlResponse{
+		Errors: []graphqlError{
+			{Message: "zone 'abc' does not have access to the field 'botscore'"},
+		},
+	}
+
+	// Act
+	got := hasBotScoreError(resp)
+
+	// Assert
+	if !got {
+		t.Error("got false, want true")
+	}
+}
+
+func Test_hasBotScoreError_returns_false_when_no_bot_score_error(t *testing.T) {
+	// Arrange
+	resp := &graphqlResponse{
+		Errors: []graphqlError{
+			{Message: "some other error"},
+		},
+	}
+
+	// Act
+	got := hasBotScoreError(resp)
+
+	// Assert
+	if got {
+		t.Error("got true, want false")
+	}
+}
+
+func Test_hasBotScoreError_returns_false_when_no_errors(t *testing.T) {
+	// Arrange
+	resp := &graphqlResponse{}
+
+	// Act
+	got := hasBotScoreError(resp)
+
+	// Assert
+	if got {
+		t.Error("got true, want false")
+	}
+}
+
 func Test_QuerySecurityEventsInput_has_zero_value_defaults(t *testing.T) {
 	// Arrange & Act
 	input := QuerySecurityEventsInput{}
