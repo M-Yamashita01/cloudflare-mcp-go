@@ -35,7 +35,7 @@ The server communicates over stdio transport and can be connected to from any MC
 | `list_kv_namespaces` | List Workers KV namespaces |
 | `list_ip_access_rules` | List IP access rules for a zone |
 | `list_waf_managed_rulesets` | Get WAF managed rulesets configuration |
-| `query_security_events` | Query security events via GraphQL Analytics API |
+| `query_security_events` | Query security events via GraphQL Analytics API (auto-fallback for zones without Bot Management) |
 
 ## MCP Client Configuration
 
@@ -44,7 +44,7 @@ The server communicates over stdio transport and can be connected to from any MC
 Install directly from the repository (no manual download required):
 
 ```bash
-claude mcp add cloudflare -- go run github.com/M-Yamashita01/cloudflare-mcp-go@v0.1.0
+claude mcp add cloudflare -- go run github.com/M-Yamashita01/cloudflare-mcp-go@v0.1.1
 ```
 
 Or if you have the repository cloned locally:
