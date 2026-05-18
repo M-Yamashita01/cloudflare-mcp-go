@@ -236,3 +236,19 @@ func Test_getRuleset_returns_error_when_token_is_missing(t *testing.T) {
 		t.Error("got IsError = false, want true")
 	}
 }
+
+func Test_listRateLimits_returns_error_when_token_is_missing(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := listRateLimits(context.Background(), &mcp.CallToolRequest{}, ListRateLimitsInput{ZoneID: "abc123"})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}
