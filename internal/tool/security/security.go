@@ -472,6 +472,35 @@ func listRateLimits(ctx context.Context, _ *mcp.CallToolRequest, input ListRateL
 	return result, nil, nil
 }
 
+// GetRateLimitInput holds parameters for retrieving a specific rate limit.
+type GetRateLimitInput struct {
+	ZoneID      string `json:"zone_id" jsonschema:"required,The ID of the zone"`
+	RateLimitID string `json:"rate_limit_id" jsonschema:"required,The ID of the rate limit rule"`
+}
+
+func getRateLimit(ctx context.Context, _ *mcp.CallToolRequest, input GetRateLimitInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	url := cfapi.APIBase + "/zones/" + input.ZoneID + "/rate_limits/" + input.RateLimitID
+
+	cfResp, err := cfapi.DoRequest(ctx, http.MethodGet, url, apiToken, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	if !cfResp.Success {
+		return cfapi.APIErrorResult(cfResp.Errors), nil, nil
+	}
+
+	result, err := cfapi.FormatResult(cfResp)
+	if err != nil {
+		return nil, nil, err
+	}
+	return result, nil, nil
+}
+
 // RegisterTools registers security and firewall tools with the MCP server.
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
@@ -513,4 +542,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "list_rate_limits",
 		Description: "List rate limiting rules for a Cloudflare zone. Returns thresholds, matching criteria, actions, and bypass rules. Useful for checking brute-force protection and identifying rate-limited traffic.",
 	}, listRateLimits)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_rate_limit",
+		Description: "Get details of a specific rate limiting rule by ID. Returns the full configuration including threshold, period, action, and match criteria.",
+	}, getRateLimit)
 }
