@@ -9,6 +9,7 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/M-Yamashita01/cloudflare-mcp-go/internal/tool/account"
+	"github.com/M-Yamashita01/cloudflare-mcp-go/internal/tool/audit"
 	"github.com/M-Yamashita01/cloudflare-mcp-go/internal/tool/dns"
 	"github.com/M-Yamashita01/cloudflare-mcp-go/internal/tool/intel"
 	"github.com/M-Yamashita01/cloudflare-mcp-go/internal/tool/kv"
@@ -31,6 +32,7 @@ func main() {
 	zone.RegisterTools(server)
 	dns.RegisterTools(server)
 	account.RegisterTools(server)
+	audit.RegisterTools(server)
 	kv.RegisterTools(server)
 	intel.RegisterTools(server)
 	logs.RegisterTools(server)
