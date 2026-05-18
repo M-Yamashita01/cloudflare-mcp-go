@@ -128,6 +128,35 @@ func listPassiveDNS(ctx context.Context, _ *mcp.CallToolRequest, input ListPassi
 	return result, nil, nil
 }
 
+// GetWhoisInput holds parameters for retrieving WHOIS data for a domain.
+type GetWhoisInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+	Domain    string `json:"domain" jsonschema:"required,The domain name to look up"`
+}
+
+func getWhois(ctx context.Context, _ *mcp.CallToolRequest, input GetWhoisInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	url := fmt.Sprintf("%s/accounts/%s/intel/whois?domain=%s", cfapi.APIBase, input.AccountID, input.Domain)
+
+	cfResp, err := cfapi.DoRequest(ctx, http.MethodGet, url, apiToken, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	if !cfResp.Success {
+		return cfapi.APIErrorResult(cfResp.Errors), nil, nil
+	}
+
+	result, err := cfapi.FormatResult(cfResp)
+	if err != nil {
+		return nil, nil, err
+	}
+	return result, nil, nil
+}
+
 // RegisterTools registers threat intelligence tools with the MCP server.
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
@@ -149,4 +178,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "list_passive_dns",
 		Description: "List domains that have resolved to a specific IP address (passive DNS). Useful for identifying shared hosting or malicious infrastructure by revealing which domains point to a given IP.",
 	}, listPassiveDNS)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_whois",
+		Description: "Get WHOIS registration data for a domain. Returns registrant information, nameservers, and registration/expiration dates. Useful for investigating domain ownership and detecting newly registered suspicious domains.",
+	}, getWhois)
 }
