@@ -346,6 +346,35 @@ func listFirewallRules(ctx context.Context, _ *mcp.CallToolRequest, input ListFi
 	return result, nil, nil
 }
 
+// GetFirewallRuleInput holds parameters for retrieving a specific firewall rule.
+type GetFirewallRuleInput struct {
+	ZoneID string `json:"zone_id" jsonschema:"required,The ID of the zone"`
+	RuleID string `json:"rule_id" jsonschema:"required,The ID of the firewall rule"`
+}
+
+func getFirewallRule(ctx context.Context, _ *mcp.CallToolRequest, input GetFirewallRuleInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	url := cfapi.APIBase + "/zones/" + input.ZoneID + "/firewall/rules/" + input.RuleID
+
+	cfResp, err := cfapi.DoRequest(ctx, http.MethodGet, url, apiToken, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	if !cfResp.Success {
+		return cfapi.APIErrorResult(cfResp.Errors), nil, nil
+	}
+
+	result, err := cfapi.FormatResult(cfResp)
+	if err != nil {
+		return nil, nil, err
+	}
+	return result, nil, nil
+}
+
 // RegisterTools registers security and firewall tools with the MCP server.
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
@@ -367,4 +396,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "list_firewall_rules",
 		Description: "List custom firewall rules for a Cloudflare zone. Returns rule expressions, actions, and priorities. Useful for investigating which rules may be blocking or challenging traffic.",
 	}, listFirewallRules)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_firewall_rule",
+		Description: "Get details of a specific custom firewall rule by ID. Returns the full rule configuration including filter expression, action, and priority. Useful for investigating why a specific rule triggered a block.",
+	}, getFirewallRule)
 }
