@@ -15,6 +15,7 @@ import (
 	"github.com/M-Yamashita01/cloudflare-mcp-go/internal/tool/kv"
 	"github.com/M-Yamashita01/cloudflare-mcp-go/internal/tool/logs"
 	"github.com/M-Yamashita01/cloudflare-mcp-go/internal/tool/security"
+	"github.com/M-Yamashita01/cloudflare-mcp-go/internal/tool/securitycenter"
 	"github.com/M-Yamashita01/cloudflare-mcp-go/internal/tool/zone"
 )
 
@@ -37,6 +38,7 @@ func main() {
 	intel.RegisterTools(server)
 	logs.RegisterTools(server)
 	security.RegisterTools(server)
+	securitycenter.RegisterTools(server)
 
 	log.Println("Starting Cloudflare MCP server (stdio)...")
 	if err := server.Run(context.Background(), &mcp.StdioTransport{}); err != nil {
