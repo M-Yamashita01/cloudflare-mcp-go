@@ -102,3 +102,22 @@ func Test_listPassiveDNS_returns_error_when_token_is_missing(t *testing.T) {
 		t.Error("got IsError = false, want true")
 	}
 }
+
+func Test_getWhois_returns_error_when_token_is_missing(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := getWhois(context.Background(), &mcp.CallToolRequest{}, GetWhoisInput{
+		AccountID: "acc123",
+		Domain:    "example.com",
+	})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}
