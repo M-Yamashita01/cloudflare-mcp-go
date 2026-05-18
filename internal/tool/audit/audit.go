@@ -15,14 +15,14 @@ import (
 
 // ListAuditLogsInput holds query parameters for listing audit logs.
 type ListAuditLogsInput struct {
-	AccountID string `json:"account_id"           jsonschema:"required,The ID of the Cloudflare account"`
-	Since     string `json:"since,omitempty"      jsonschema:"Filter by start date in ISO 8601 format (e.g. 2026-05-01T00:00:00Z)"`
-	Before    string `json:"before,omitempty"     jsonschema:"Filter by end date in ISO 8601 format"`
-	ActorIP   string `json:"actor_ip,omitempty"   jsonschema:"Filter by the IP address of the actor"`
+	AccountID  string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+	Since      string `json:"since,omitempty" jsonschema:"Filter by start date in ISO 8601 format (e.g. 2026-05-01T00:00:00Z)"`
+	Before     string `json:"before,omitempty" jsonschema:"Filter by end date in ISO 8601 format"`
+	ActorIP    string `json:"actor_ip,omitempty" jsonschema:"Filter by the IP address of the actor"`
 	ActorEmail string `json:"actor_email,omitempty" jsonschema:"Filter by the email of the actor"`
-	Direction string `json:"direction,omitempty"  jsonschema:"Sort direction: asc or desc (default: desc)"`
-	Page      int    `json:"page,omitempty"       jsonschema:"Page number of paginated results (default: 1)"`
-	PerPage   int    `json:"per_page,omitempty"   jsonschema:"Number of entries per page (default: 25, max: 1000)"`
+	Direction  string `json:"direction,omitempty" jsonschema:"Sort direction: asc or desc (default: desc)"`
+	Page       int    `json:"page,omitempty" jsonschema:"Page number of paginated results (default: 1)"`
+	PerPage    int    `json:"per_page,omitempty" jsonschema:"Number of entries per page (default: 25, max: 1000)"`
 }
 
 func listAuditLogs(ctx context.Context, _ *mcp.CallToolRequest, input ListAuditLogsInput) (*mcp.CallToolResult, any, error) {
