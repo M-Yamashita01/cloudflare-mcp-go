@@ -99,6 +99,35 @@ func getDomainHistory(ctx context.Context, _ *mcp.CallToolRequest, input GetDoma
 	return result, nil, nil
 }
 
+// ListPassiveDNSInput holds parameters for listing domains resolved to an IP.
+type ListPassiveDNSInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+	IP        string `json:"ip" jsonschema:"required,The IPv4 address to look up"`
+}
+
+func listPassiveDNS(ctx context.Context, _ *mcp.CallToolRequest, input ListPassiveDNSInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	url := fmt.Sprintf("%s/accounts/%s/intel/dns?ipv4=%s", cfapi.APIBase, input.AccountID, input.IP)
+
+	cfResp, err := cfapi.DoRequest(ctx, http.MethodGet, url, apiToken, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	if !cfResp.Success {
+		return cfapi.APIErrorResult(cfResp.Errors), nil, nil
+	}
+
+	result, err := cfapi.FormatResult(cfResp)
+	if err != nil {
+		return nil, nil, err
+	}
+	return result, nil, nil
+}
+
 // RegisterTools registers threat intelligence tools with the MCP server.
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
@@ -115,4 +144,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "get_domain_history",
 		Description: "Get historical threat data for a domain. Returns past and current security threat categories and content classifications. Useful for checking if a domain has a pattern of malicious behavior over time.",
 	}, getDomainHistory)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "list_passive_dns",
+		Description: "List domains that have resolved to a specific IP address (passive DNS). Useful for identifying shared hosting or malicious infrastructure by revealing which domains point to a given IP.",
+	}, listPassiveDNS)
 }

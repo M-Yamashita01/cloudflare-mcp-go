@@ -83,3 +83,22 @@ func Test_getDomainHistory_returns_error_when_token_is_missing(t *testing.T) {
 		t.Error("got IsError = false, want true")
 	}
 }
+
+func Test_listPassiveDNS_returns_error_when_token_is_missing(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := listPassiveDNS(context.Background(), &mcp.CallToolRequest{}, ListPassiveDNSInput{
+		AccountID: "acc123",
+		IP:        "203.0.113.50",
+	})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}
