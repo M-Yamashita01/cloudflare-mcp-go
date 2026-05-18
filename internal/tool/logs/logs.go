@@ -135,6 +135,34 @@ func listReceived(ctx context.Context, _ *mcp.CallToolRequest, input ListReceive
 	}, nil, nil
 }
 
+// ListFieldsInput holds parameters for listing available log fields.
+type ListFieldsInput struct {
+	ZoneID string `json:"zone_id" jsonschema:"required,The ID of the zone"`
+}
+
+func listFields(ctx context.Context, _ *mcp.CallToolRequest, input ListFieldsInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	url := cfapi.APIBase + "/zones/" + input.ZoneID + "/logs/received/fields"
+
+	cfResp, err := cfapi.DoRequest(ctx, http.MethodGet, url, apiToken, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	if !cfResp.Success {
+		return cfapi.APIErrorResult(cfResp.Errors), nil, nil
+	}
+
+	result, err := cfapi.FormatResult(cfResp)
+	if err != nil {
+		return nil, nil, err
+	}
+	return result, nil, nil
+}
+
 // RegisterTools registers log investigation tools with the MCP server.
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
@@ -146,4 +174,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "list_received_logs",
 		Description: "Retrieve HTTP request logs for a Cloudflare zone within a time range. Returns NDJSON log entries. Time range is limited to 1 hour and data must be at least 5 minutes old. Useful for investigating traffic patterns and anomalies.",
 	}, listReceived)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "list_log_fields",
+		Description: "List all available HTTP request log fields for a Cloudflare zone. Returns field names and descriptions. Use this to discover which fields can be specified when calling get_log_by_rayid or list_received_logs.",
+	}, listFields)
 }
