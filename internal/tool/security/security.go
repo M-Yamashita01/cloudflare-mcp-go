@@ -306,6 +306,46 @@ func hasBotScoreError(resp *graphqlResponse) bool {
 	return false
 }
 
+// ListFirewallRulesInput holds query parameters for listing firewall rules.
+type ListFirewallRulesInput struct {
+	ZoneID  string `json:"zone_id"            jsonschema:"required,The ID of the zone"`
+	Page    int    `json:"page,omitempty"     jsonschema:"Page number of paginated results (default: 1)"`
+	PerPage int    `json:"per_page,omitempty" jsonschema:"Number of rules per page (default: 25, max: 100)"`
+}
+
+func listFirewallRules(ctx context.Context, _ *mcp.CallToolRequest, input ListFirewallRulesInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	url := cfapi.APIBase + "/zones/" + input.ZoneID + "/firewall/rules"
+	var params []string
+	if input.Page > 0 {
+		params = append(params, fmt.Sprintf("page=%d", input.Page))
+	}
+	if input.PerPage > 0 {
+		params = append(params, fmt.Sprintf("per_page=%d", input.PerPage))
+	}
+	if len(params) > 0 {
+		url += "?" + strings.Join(params, "&")
+	}
+
+	cfResp, err := cfapi.DoRequest(ctx, http.MethodGet, url, apiToken, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	if !cfResp.Success {
+		return cfapi.APIErrorResult(cfResp.Errors), nil, nil
+	}
+
+	result, err := cfapi.FormatResult(cfResp)
+	if err != nil {
+		return nil, nil, err
+	}
+	return result, nil, nil
+}
+
 // RegisterTools registers security and firewall tools with the MCP server.
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
@@ -322,4 +362,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "query_security_events",
 		Description: "Query security events for a Cloudflare zone using the GraphQL Analytics API. Returns event details including client info, action taken, rule details, bot score, and response status for security event triage.",
 	}, querySecurityEvents)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "list_firewall_rules",
+		Description: "List custom firewall rules for a Cloudflare zone. Returns rule expressions, actions, and priorities. Useful for investigating which rules may be blocking or challenging traffic.",
+	}, listFirewallRules)
 }

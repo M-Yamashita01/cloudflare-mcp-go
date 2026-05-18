@@ -152,3 +152,29 @@ func Test_QuerySecurityEventsInput_has_zero_value_defaults(t *testing.T) {
 		t.Error("got non-zero defaults, want zero values for QuerySecurityEventsInput")
 	}
 }
+
+func Test_listFirewallRules_returns_error_when_token_is_missing(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := listFirewallRules(context.Background(), &mcp.CallToolRequest{}, ListFirewallRulesInput{ZoneID: "abc123"})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}
+
+func Test_ListFirewallRulesInput_has_zero_value_defaults(t *testing.T) {
+	// Arrange & Act
+	input := ListFirewallRulesInput{}
+
+	// Assert
+	if input.ZoneID != "" || input.Page != 0 || input.PerPage != 0 {
+		t.Error("got non-zero defaults, want zero values for ListFirewallRulesInput")
+	}
+}
