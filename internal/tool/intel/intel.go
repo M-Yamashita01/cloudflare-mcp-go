@@ -186,6 +186,35 @@ func getASNIntel(ctx context.Context, _ *mcp.CallToolRequest, input GetASNIntelI
 	return result, nil, nil
 }
 
+// GetDomainIntelBulkInput holds parameters for bulk domain intelligence lookup.
+type GetDomainIntelBulkInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+	Domains   string `json:"domains" jsonschema:"required,Comma-separated list of domain names to look up"`
+}
+
+func getDomainIntelBulk(ctx context.Context, _ *mcp.CallToolRequest, input GetDomainIntelBulkInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	url := fmt.Sprintf("%s/accounts/%s/intel/domain/bulk?domain=%s", cfapi.APIBase, input.AccountID, input.Domains)
+
+	cfResp, err := cfapi.DoRequest(ctx, http.MethodGet, url, apiToken, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	if !cfResp.Success {
+		return cfapi.APIErrorResult(cfResp.Errors), nil, nil
+	}
+
+	result, err := cfapi.FormatResult(cfResp)
+	if err != nil {
+		return nil, nil, err
+	}
+	return result, nil, nil
+}
+
 // RegisterTools registers threat intelligence tools with the MCP server.
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
@@ -217,4 +246,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "get_asn_intel",
 		Description: "Get an overview of an Autonomous System Number (ASN) and its subnet allocations. Useful for understanding the network behind a suspicious IP and assessing whether an entire ASN is involved in attacks.",
 	}, getASNIntel)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_domain_intel_bulk",
+		Description: "Get threat intelligence for multiple domains at once. Returns risk scores and content categories for each domain. Useful for batch assessment of suspicious domains found in logs.",
+	}, getDomainIntelBulk)
 }
