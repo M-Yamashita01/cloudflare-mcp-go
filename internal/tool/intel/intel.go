@@ -70,6 +70,35 @@ func getDomainIntel(ctx context.Context, _ *mcp.CallToolRequest, input GetDomain
 	return result, nil, nil
 }
 
+// GetDomainHistoryInput holds parameters for retrieving domain threat history.
+type GetDomainHistoryInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+	Domain    string `json:"domain" jsonschema:"required,The domain name to look up"`
+}
+
+func getDomainHistory(ctx context.Context, _ *mcp.CallToolRequest, input GetDomainHistoryInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	url := fmt.Sprintf("%s/accounts/%s/intel/domain-history?domain=%s", cfapi.APIBase, input.AccountID, input.Domain)
+
+	cfResp, err := cfapi.DoRequest(ctx, http.MethodGet, url, apiToken, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	if !cfResp.Success {
+		return cfapi.APIErrorResult(cfResp.Errors), nil, nil
+	}
+
+	result, err := cfapi.FormatResult(cfResp)
+	if err != nil {
+		return nil, nil, err
+	}
+	return result, nil, nil
+}
+
 // RegisterTools registers threat intelligence tools with the MCP server.
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
@@ -81,4 +110,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "get_domain_intel",
 		Description: "Get security intelligence for a domain. Returns risk scores, content categories, and DNS information. Useful for investigating suspicious domains found in referrer headers or access logs.",
 	}, getDomainIntel)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_domain_history",
+		Description: "Get historical threat data for a domain. Returns past and current security threat categories and content classifications. Useful for checking if a domain has a pattern of malicious behavior over time.",
+	}, getDomainHistory)
 }
