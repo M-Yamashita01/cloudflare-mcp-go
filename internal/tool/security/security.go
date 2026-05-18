@@ -432,6 +432,46 @@ func getRuleset(ctx context.Context, _ *mcp.CallToolRequest, input GetRulesetInp
 	return result, nil, nil
 }
 
+// ListRateLimitsInput holds query parameters for listing rate limits.
+type ListRateLimitsInput struct {
+	ZoneID  string `json:"zone_id"            jsonschema:"required,The ID of the zone"`
+	Page    int    `json:"page,omitempty"     jsonschema:"Page number of paginated results (default: 1)"`
+	PerPage int    `json:"per_page,omitempty" jsonschema:"Number of rules per page (default: 25, max: 1000)"`
+}
+
+func listRateLimits(ctx context.Context, _ *mcp.CallToolRequest, input ListRateLimitsInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	url := cfapi.APIBase + "/zones/" + input.ZoneID + "/rate_limits"
+	var params []string
+	if input.Page > 0 {
+		params = append(params, fmt.Sprintf("page=%d", input.Page))
+	}
+	if input.PerPage > 0 {
+		params = append(params, fmt.Sprintf("per_page=%d", input.PerPage))
+	}
+	if len(params) > 0 {
+		url += "?" + strings.Join(params, "&")
+	}
+
+	cfResp, err := cfapi.DoRequest(ctx, http.MethodGet, url, apiToken, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	if !cfResp.Success {
+		return cfapi.APIErrorResult(cfResp.Errors), nil, nil
+	}
+
+	result, err := cfapi.FormatResult(cfResp)
+	if err != nil {
+		return nil, nil, err
+	}
+	return result, nil, nil
+}
+
 // RegisterTools registers security and firewall tools with the MCP server.
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
@@ -468,4 +508,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "get_ruleset",
 		Description: "Get a specific ruleset with all its rules. Returns the complete rule definitions including expressions, actions, and configurations. Useful for inspecting what traffic patterns are matched by a ruleset.",
 	}, getRuleset)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "list_rate_limits",
+		Description: "List rate limiting rules for a Cloudflare zone. Returns thresholds, matching criteria, actions, and bypass rules. Useful for checking brute-force protection and identifying rate-limited traffic.",
+	}, listRateLimits)
 }
