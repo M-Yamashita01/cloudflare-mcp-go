@@ -140,3 +140,22 @@ func Test_getASNIntel_returns_error_when_token_is_missing(t *testing.T) {
 		t.Error("got IsError = false, want true")
 	}
 }
+
+func Test_getDomainIntelBulk_returns_error_when_token_is_missing(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := getDomainIntelBulk(context.Background(), &mcp.CallToolRequest{}, GetDomainIntelBulkInput{
+		AccountID: "acc123",
+		Domains:   "example.com,test.com",
+	})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}
