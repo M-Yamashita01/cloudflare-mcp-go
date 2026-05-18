@@ -157,6 +157,35 @@ func getWhois(ctx context.Context, _ *mcp.CallToolRequest, input GetWhoisInput) 
 	return result, nil, nil
 }
 
+// GetASNIntelInput holds parameters for retrieving ASN intelligence.
+type GetASNIntelInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+	ASN       int    `json:"asn" jsonschema:"required,The Autonomous System Number to look up"`
+}
+
+func getASNIntel(ctx context.Context, _ *mcp.CallToolRequest, input GetASNIntelInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	url := fmt.Sprintf("%s/accounts/%s/intel/asn/%d", cfapi.APIBase, input.AccountID, input.ASN)
+
+	cfResp, err := cfapi.DoRequest(ctx, http.MethodGet, url, apiToken, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	if !cfResp.Success {
+		return cfapi.APIErrorResult(cfResp.Errors), nil, nil
+	}
+
+	result, err := cfapi.FormatResult(cfResp)
+	if err != nil {
+		return nil, nil, err
+	}
+	return result, nil, nil
+}
+
 // RegisterTools registers threat intelligence tools with the MCP server.
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
@@ -183,4 +212,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "get_whois",
 		Description: "Get WHOIS registration data for a domain. Returns registrant information, nameservers, and registration/expiration dates. Useful for investigating domain ownership and detecting newly registered suspicious domains.",
 	}, getWhois)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_asn_intel",
+		Description: "Get an overview of an Autonomous System Number (ASN) and its subnet allocations. Useful for understanding the network behind a suspicious IP and assessing whether an entire ASN is involved in attacks.",
+	}, getASNIntel)
 }
