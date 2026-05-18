@@ -403,6 +403,35 @@ func listRulesets(ctx context.Context, _ *mcp.CallToolRequest, input ListRuleset
 	return result, nil, nil
 }
 
+// GetRulesetInput holds parameters for retrieving a specific ruleset.
+type GetRulesetInput struct {
+	ZoneID    string `json:"zone_id" jsonschema:"required,The ID of the zone"`
+	RulesetID string `json:"ruleset_id" jsonschema:"required,The ID of the ruleset"`
+}
+
+func getRuleset(ctx context.Context, _ *mcp.CallToolRequest, input GetRulesetInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	url := cfapi.APIBase + "/zones/" + input.ZoneID + "/rulesets/" + input.RulesetID
+
+	cfResp, err := cfapi.DoRequest(ctx, http.MethodGet, url, apiToken, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	if !cfResp.Success {
+		return cfapi.APIErrorResult(cfResp.Errors), nil, nil
+	}
+
+	result, err := cfapi.FormatResult(cfResp)
+	if err != nil {
+		return nil, nil, err
+	}
+	return result, nil, nil
+}
+
 // RegisterTools registers security and firewall tools with the MCP server.
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
@@ -434,4 +463,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "list_rulesets",
 		Description: "List all rulesets for a Cloudflare zone. Returns ruleset metadata (ID, name, kind, phase, version) without individual rules. Use get_ruleset to inspect rules within a specific ruleset.",
 	}, listRulesets)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_ruleset",
+		Description: "Get a specific ruleset with all its rules. Returns the complete rule definitions including expressions, actions, and configurations. Useful for inspecting what traffic patterns are matched by a ruleset.",
+	}, getRuleset)
 }
