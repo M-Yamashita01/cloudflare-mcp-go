@@ -11,6 +11,7 @@ import (
 	"github.com/M-Yamashita01/cloudflare-mcp-go/internal/tool/account"
 	"github.com/M-Yamashita01/cloudflare-mcp-go/internal/tool/dns"
 	"github.com/M-Yamashita01/cloudflare-mcp-go/internal/tool/kv"
+	"github.com/M-Yamashita01/cloudflare-mcp-go/internal/tool/logs"
 	"github.com/M-Yamashita01/cloudflare-mcp-go/internal/tool/security"
 	"github.com/M-Yamashita01/cloudflare-mcp-go/internal/tool/zone"
 )
@@ -30,6 +31,7 @@ func main() {
 	dns.RegisterTools(server)
 	account.RegisterTools(server)
 	kv.RegisterTools(server)
+	logs.RegisterTools(server)
 	security.RegisterTools(server)
 
 	log.Println("Starting Cloudflare MCP server (stdio)...")
