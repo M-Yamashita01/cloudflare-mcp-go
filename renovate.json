@@ -5,8 +5,12 @@
   "schedule": ["every weekend"],
   "prConcurrentLimit": 5,
   "platformAutomerge": false,
+  "osvVulnerabilityAlerts": true,
   "vulnerabilityAlerts": {
-    "enabled": true
+    "enabled": true,
+    "labels": ["dependencies", "security"],
+    "automerge": true,
+    "schedule": ["at any time"]
   },
   "packageRules": [
     {
@@ -15,7 +19,8 @@
     },
     {
       "matchUpdateTypes": ["major"],
-      "automerge": false
+      "automerge": false,
+      "labels": ["dependencies", "major-update"]
     }
   ]
 }
