@@ -14,6 +14,19 @@
   },
   "packageRules": [
     {
+      "description": "Terraform (github-repo-management) owns these distributed workflow files; Renovate must not edit them or it fights Terraform over the same content.",
+      "matchFileNames": [
+        ".github/workflows/ai-triage.yml",
+        ".github/workflows/ai-fix.yml",
+        ".github/workflows/ai-review.yml",
+        ".github/workflows/auto-merge.yml",
+        ".github/workflows/codeql.yml",
+        ".github/workflows/digest.yml",
+        ".github/workflows/drift.yml"
+      ],
+      "enabled": false
+    },
+    {
       "matchUpdateTypes": ["patch", "minor"],
       "automerge": true
     },
