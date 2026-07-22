@@ -1,0 +1,82 @@
+# Managed by Terraform (github-repo-management). Do not edit here.
+name: Auto Merge
+
+on:
+  schedule:
+    - cron: "30 0 * * *" # daily 09:30 JST
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: auto-merge
+  cancel-in-progress: false
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Merge eligible automation PRs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          USE_USER_TOKEN: "false"
+          TIER3_REGEX: '^\.github/workflows/release\.yml$|^\.goreleaser'
+          COOLING_HOURS: "72"
+        run: |
+          set -euo pipefail
+          # On the self-hosted runner the user-authenticated gh token is used so
+          # that merge pushes trigger follow-up workflows (e.g. terraform apply).
+          if [ "$USE_USER_TOKEN" = "true" ]; then
+            GH_TOKEN=$(gh auth token)
+            export GH_TOKEN
+          fi
+
+          for num in $(gh pr list --state open --limit 50 --json number --jq '.[].number'); do
+            info=$(gh pr view "$num" --json labels,createdAt,headRefName,isDraft,mergeStateStatus,files)
+
+            draft=$(jq -r '.isDraft' <<<"$info")
+            [ "$draft" = "true" ] && continue
+
+            branch=$(jq -r '.headRefName' <<<"$info")
+            case "$branch" in
+              renovate/*|ai-fix/*|claude/*) ;;
+              *) continue ;;
+            esac
+
+            labels=$(jq -r '[.labels[].name] | join(",")' <<<"$info")
+            case ",$labels," in
+              *,ai-pause,*|*,needs-human,*|*,tier/3,*) continue ;;
+            esac
+
+            # Tier 3 path guard: release/deploy/provider files require a human.
+            if [ -n "$TIER3_REGEX" ]; then
+              if jq -r '.files[].path' <<<"$info" | grep -Eq "$TIER3_REGEX"; then
+                gh pr edit "$num" --add-label tier/3 >/dev/null 2>&1 || true
+                gh pr comment "$num" --body "Auto-merge skipped: this PR touches tier/3 paths (release/deploy/provider). A human needs to merge it." >/dev/null 2>&1 || true
+                continue
+              fi
+            fi
+
+            case ",$labels," in
+              *,ai-approved,*) ;;
+              *) continue ;;
+            esac
+
+            old_enough=$(jq -r --argjson h "$COOLING_HOURS" '((now - (.createdAt | fromdateiso8601)) / 3600) >= $h' <<<"$info")
+            [ "$old_enough" = "true" ] || continue
+
+            state=$(jq -r '.mergeStateStatus' <<<"$info")
+            [ "$state" = "CLEAN" ] || continue
+
+            # Belt and braces: every check must have finished successfully.
+            gh pr checks "$num" >/dev/null 2>&1 || continue
+
+            echo "Merging PR #$num ($branch)"
+            gh pr merge "$num" --merge >/dev/null
+            gh pr comment "$num" --body "Merged automatically: ai-approved, CI green, cooling period passed." >/dev/null 2>&1 || true
+          done
