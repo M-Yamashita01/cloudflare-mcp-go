@@ -38,6 +38,9 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # Renovate opens the dependency PRs this job reviews; without this the
+          # action refuses to run for a bot actor ("non-human actor" error).
+          allowed_bots: "renovate[bot]"
           claude_args: "--max-turns 60"
           prompt: |
             You are an independent reviewer for the automation pull request whose
