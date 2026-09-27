@@ -13,12 +13,23 @@ Conventional Commits merged to main
    v
 release-please keeps a Release PR up to date (version bump + CHANGELOG)
    |
-   v  (you merge the Release PR when you decide to ship)
+   v  (the Release PR is merged: see "How the Release PR is merged" below)
 release-please creates the tag and the GitHub Release
    |
    v
 GoReleaser builds cross-platform binaries and appends them to that release
 ```
+
+## How the Release PR is merged
+
+Patch releases ship automatically; larger releases need a human.
+
+- Patch bump (`x.y.Z`): the `auto-merge-patch` job runs weekly (Mondays 00:00 UTC
+  / 09:00 JST) and merges the open Release PR automatically when it is a patch-only
+  bump. This ships accumulated `fix:` / `fix(deps):` changes without manual action.
+  You can also trigger it on demand from the Actions tab (Run workflow).
+- Minor bump (`x.Y.0`, from `feat:`) or major bump: the Release PR is left open for
+  a human to review and merge, since these are larger changes.
 
 For the decision policy (when to ship, how to pick the version), see
 [versioning-policy.md](versioning-policy.md).
@@ -47,19 +58,16 @@ Each PR should use a Conventional Commit title. When such commits land on `main`
 the `Release Please` workflow opens or updates a single Release PR titled
 `chore(main): release x.y.z`.
 
-### 2. Review the Release PR (typically weekly)
+### 2. The Release PR is merged
 
-Open the Release PR and check:
+- Patch-only Release PRs are merged automatically on the weekly schedule (see
+  "How the Release PR is merged" above). No action is needed.
+- Minor/major Release PRs wait for a human. Open the PR, check the proposed
+  version and the generated `CHANGELOG.md` entry, then merge when ready.
 
-- The proposed version number matches the changes (see versioning-policy.md)
-- The generated `CHANGELOG.md` entry reads correctly
+### 3. Merging the Release PR triggers the release
 
-If there is nothing worth shipping this week (for example, no user-facing change),
-leave the PR open and revisit next week.
-
-### 3. Merge the Release PR to release
-
-Merging the Release PR is the single "ship it" action. It:
+Whichever way it is merged, it:
 
 1. Updates `CHANGELOG.md` and `.release-please-manifest.json` on `main`
 2. Creates the git tag (e.g. `v0.2.1`)
@@ -87,7 +95,7 @@ release that release-please created.
 
 | File | Purpose |
 |------|---------|
-| `.github/workflows/release-please.yml` | Runs release-please on push to `main`; runs GoReleaser when a release is created |
+| `.github/workflows/release-please.yml` | Maintains the Release PR on push to `main`; auto-merges patch-only Release PRs weekly; runs GoReleaser when a release is created |
 | `release-please-config.json` | release-please settings (release type, version bump rules, changelog sections) |
 | `.release-please-manifest.json` | Tracks the current released version |
 | `.goreleaser.yml` | GoReleaser config; `release.mode: append` so it adds binaries to the existing release |

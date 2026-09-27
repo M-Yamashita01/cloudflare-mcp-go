@@ -71,12 +71,16 @@ Conventional Commits merged to main
    v
 release-please keeps a Release PR up to date (version bump + CHANGELOG)
    |
-   v  (merge the Release PR when you decide to ship, per the timing above)
+   v  patch: auto-merged weekly    minor/major: merged by a human
 release-please creates the tag and the GitHub Release
    |
    v
 GoReleaser builds per-OS binaries and appends them to that release
 ```
+
+Patch releases (`fix:` / `fix(deps):`) are shipped automatically on a weekly
+schedule. Minor releases (`feat:`) and any breaking changes are left for a human
+to merge, so larger changes always get a review.
 
 Because the version comes from commit prefixes, use Conventional Commit titles
 (`feat:` for MINOR, `fix:` for PATCH, `feat!:` for breaking changes handled as MINOR
