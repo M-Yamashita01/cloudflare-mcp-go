@@ -40,15 +40,23 @@ release-please derives the next version from commit messages, so the prefix matt
 
 | Prefix | Effect on version (while in 0.x) |
 |--------|----------------------------------|
-| `feat:` | MINOR bump (new feature) |
-| `fix:` | PATCH bump (bug fix) |
-| `fix(deps):` | PATCH bump (dependency update, used by Renovate) |
+| `feat:` | MINOR bump (new feature); shown in release notes |
+| `fix:` | PATCH bump (bug fix); shown in release notes |
+| `fix(deps):` | PATCH bump (dependency update, used by Renovate); shown in release notes |
+| `perf:` | PATCH bump (performance improvement); shown in release notes |
 | `feat!:` / `BREAKING CHANGE:` | MINOR bump (breaking changes stay MINOR until 1.0.0) |
-| `docs:`, `refactor:`, `perf:` | Appear in the changelog; no version bump on their own |
-| `chore:` | No version bump, hidden from the changelog |
+| `docs:`, `refactor:`, `chore:` | No version bump; hidden from release notes |
+
+Note on how release-please decides the bump: internally, only `feat` and
+breaking changes map to MINOR/MAJOR; every other releasable type maps to PATCH.
+To keep `docs:` / `refactor:` / `chore:` from cutting a pointless release (they
+do not change the built binary), they are marked hidden in
+`release-please-config.json`, which also removes them from the release notes.
+There is no release-please setting that both shows a type in the notes and
+skips the version bump; that is why these types are hidden entirely.
 
 If nothing since the last release bumps the version, no Release PR is created,
-so weeks with only `chore:` changes produce no release.
+so weeks with only `docs:` / `refactor:` / `chore:` changes produce no release.
 
 ## Releasing
 

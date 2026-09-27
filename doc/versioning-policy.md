@@ -17,7 +17,11 @@ Follow Semantic Versioning (SemVer). https://semver.org/
 
 - MAJOR (v1.0.0 -> v2.0.0): Breaking changes, such as renaming a tool or changing an input schema
 - MINOR (v0.2.0 -> v0.3.0): Backward-compatible new features, such as adding a new Cloudflare API tool
-- PATCH (v0.2.0 -> v0.2.1): Bug fixes, dependency updates, documentation fixes
+- PATCH (v0.2.0 -> v0.2.1): Bug fixes, dependency updates, performance improvements
+
+Documentation-only, refactor, and chore changes do not cut a release on their
+own, since they do not change the built binary. See release.md for the exact
+commit-prefix to version-bump mapping.
 
 While in 0.x, breaking changes are allowed in MINOR versions.
 Release 1.0.0 once the API is stable and backward compatibility can be promised.
