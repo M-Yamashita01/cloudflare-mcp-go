@@ -1,72 +1,83 @@
-# バージョン管理とリリース判断の方針
+# Versioning and Release Decision Policy
 
-このドキュメントは、バージョンをいつ・どう上げ、いつリリース(タグ)を出すかの方針をまとめたもの。
-人間とAIの双方が判断のよりどころにする。運用手順の詳細は release.md を参照。
+This document describes how to bump versions and when to cut a release (tag).
+It is the shared reference for both humans and AI agents when making these decisions.
+For the operational steps, see release.md.
 
-## 前提
+## Context
 
-このリポジトリはライブラリではなくアプリケーション(MCPサーバ)。
-利用者はサーバを動かす人であり、他プロジェクトが import して壊れる懸念は薄い。
-そのため厳密さよりも、何が変わったかを追えることを重視する。
+This repository is an application (an MCP server), not a library.
+Its users are people who run the server; there is little concern about other projects
+importing it and breaking. Because of that, we prioritize being able to track what
+changed over strict compatibility guarantees.
 
-## バージョン管理方針
+## Versioning Policy
 
-セマンティックバージョニング(SemVer)に従う。https://semver.org/
+Follow Semantic Versioning (SemVer). https://semver.org/
 
-- MAJOR (v1.0.0 → v2.0.0): 破壊的変更。tool名やinputスキーマの非互換変更など
-- MINOR (v0.2.0 → v0.3.0): 後方互換の新機能。新しいCloudflare APIツールの追加など
-- PATCH (v0.2.0 → v0.2.1): バグ修正、依存更新、ドキュメント修正
+- MAJOR (v1.0.0 -> v2.0.0): Breaking changes, such as renaming a tool or changing an input schema
+- MINOR (v0.2.0 -> v0.3.0): Backward-compatible new features, such as adding a new Cloudflare API tool
+- PATCH (v0.2.0 -> v0.2.1): Bug fixes, dependency updates, documentation fixes
 
-0.x の間は破壊的変更を MINOR で扱う。APIが固まり後方互換を約束できる段階になったら 1.0.0 を出す。
+While in 0.x, breaking changes are allowed in MINOR versions.
+Release 1.0.0 once the API is stable and backward compatibility can be promised.
 
-### リニア運用(系列を分岐させない)
+### Linear versioning (no branching of version lines)
 
-バージョンは前へ進めるだけ。v0.2.1 は v0.2 系列(v0.2.x)の続きであり、v0.2 とは別物ではない。
+Versions only move forward. v0.2.1 is a continuation of the v0.2.x line;
+it is not a separate thing from v0.2.
 
 ```
-v0.2.0 → v0.2.1 → v0.2.2 → ... → v0.3.0 → v0.3.1 → ...
+v0.2.0 -> v0.2.1 -> v0.2.2 -> ... -> v0.3.0 -> v0.3.1 -> ...
 ```
 
-パッチを v0.2.1 として出すこと自体が v0.2 にパッチを入れた結果なので、
-別ブランチへ二重に入れる作業(バックポート)は発生しない。
+Shipping a patch as v0.2.1 is itself the result of patching v0.2,
+so there is no need to apply the same change to a separate branch (backporting).
 
-旧系列を並行してサポートし続けるバックポート運用(例: v0.3 が出た後も v0.2.x に修正を入れ続ける)は、
-大量の利用者が旧版に固定される大規模OSSがやること。このリポジトリの規模と 0.x 段階では採用しない。
-利用者には最新版へ上がってもらう前提とする。
+Backport maintenance, where an older line keeps receiving fixes in parallel
+(for example, still patching v0.2.x after v0.3 is out), is something large OSS projects do
+when many users are pinned to old versions. Given this project's size and 0.x stage,
+we do not adopt it. Users are expected to move to the latest version.
 
-## タグを出すタイミングの判断指針
+## When to Cut a Tag
 
-時間ベースとイベントベースの合わせ技で判断する。
+Decide using a combination of time-based and event-based triggers.
 
-| きっかけ | 対応 |
+| Trigger | Action |
 |---|---|
-| 定期(週次) | 溜まった fix をまとめて PATCH で出す |
-| セキュリティ修正 | 定期を待たず即リリース |
-| 新機能(feat) | 機能が使える状態になったら MINOR で出す |
+| Regular (weekly) | Ship accumulated fixes together as a PATCH |
+| Security fix | Release immediately, without waiting for the regular cadence |
+| New feature (feat) | Release as MINOR once the feature is usable |
 
-### 出す / 出さないの基準
+### Release / no-release criteria
 
-- 出す: バグ修正・セキュリティ・新機能など、利用者に届けたい変化が1つでも入ったとき
-- 出さない: 変更が依存更新のみで利用者の挙動に影響しないとき。急がず溜めて翌週に回してよい
-- 迷ったら: 週次の定期便に乗せる。変更がない週は出さない
+- Release: when there is at least one user-facing change worth shipping (bug fix, security, new feature)
+- Do not release: when the changes are dependency updates only and do not affect user-facing behavior; it is fine to accumulate them and defer to the next week
+- When in doubt: put it on the weekly cadence. Skip weeks with no changes
 
-依存更新(Renovateなど)は、当てるたびにバージョンを上げる必要はない。
-コミット/マージとリリース(バージョン付与)は別物で、リリースを切るときにまとめて上げる。
+Dependency updates (such as Renovate) do not require a version bump every time.
+Commits/merges and releases (version assignment) are decoupled;
+bump the version when you cut a release, batching the changes.
 
-## リリースの流れ
+## Release Flow
 
-タグ push を起点に、CI とビルドが自動で走る。
+A tag push is the trigger; CI and the build run automatically.
 
 ```
-main が安定(CIグリーン)
-   ↓
-次のバージョンを決める(上記の方針で MAJOR/MINOR/PATCH を判断)
-   ↓
-タグを作成して push (例: git tag v0.2.1 && git push origin v0.2.1)
-   ↓
-release.yml が発火 → lint + test → GoReleaser が各OSバイナリをビルド
-   ↓
-GitHub Release が自動作成される
+main is stable (CI green)
+   |
+   v
+Decide the next version (choose MAJOR/MINOR/PATCH per the policy above)
+   |
+   v
+Create and push a tag (e.g. git tag v0.2.1 && git push origin v0.2.1)
+   |
+   v
+release.yml fires -> lint + test -> GoReleaser builds per-OS binaries
+   |
+   v
+A GitHub Release is created automatically
 ```
 
-具体的なコマンドや GoReleaser の設定、不具合リリースの直し方は release.md にまとめてある。
+The concrete commands, the GoReleaser configuration, and how to fix a bad release
+are documented in release.md.
