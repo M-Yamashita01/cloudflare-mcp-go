@@ -1,0 +1,5 @@
+.git
+.github
+*.md
+doc
+cloudflare-mcp-go
