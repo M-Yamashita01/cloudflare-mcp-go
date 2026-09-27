@@ -18,7 +18,7 @@ Add it to Claude Code with a single command:
 ```bash
 claude mcp add cloudflare \
   -e CLOUDFLARE_API_TOKEN=your-api-token \
-  -- go run github.com/M-Yamashita01/cloudflare-mcp-go@v0.2.0
+  -- go run github.com/M-Yamashita01/cloudflare-mcp-go@latest
 ```
 
 That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is optional and only needed by a few tools (accounts, audit logs, KV, intel).
@@ -109,7 +109,7 @@ The server communicates over stdio and can be connected from any MCP client.
 ```bash
 claude mcp add cloudflare \
   -e CLOUDFLARE_API_TOKEN=your-api-token \
-  -- go run github.com/M-Yamashita01/cloudflare-mcp-go@v0.2.0
+  -- go run github.com/M-Yamashita01/cloudflare-mcp-go@latest
 ```
 
 Or, if you have the repository cloned locally:
