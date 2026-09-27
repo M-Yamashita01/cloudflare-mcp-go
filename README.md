@@ -3,6 +3,7 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/M-Yamashita01/cloudflare-mcp-go.svg)](https://pkg.go.dev/github.com/M-Yamashita01/cloudflare-mcp-go)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/M-Yamashita01/cloudflare-mcp-go)](go.mod)
 [![Latest Release](https://img.shields.io/github/v/release/M-Yamashita01/cloudflare-mcp-go)](https://github.com/M-Yamashita01/cloudflare-mcp-go/releases)
+[![Glama score](https://glama.ai/mcp/servers/M-Yamashita01/cloudflare-mcp-go/badges/score.svg)](https://glama.ai/mcp/servers/M-Yamashita01/cloudflare-mcp-go)
 
 An MCP (Model Context Protocol) server for the Cloudflare API v4, written in Go.
 
