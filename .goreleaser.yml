@@ -39,3 +39,9 @@ changelog:
       regexp: '^fix'
     - title: Others
       order: 999
+
+# release-please creates the GitHub Release and its changelog when the
+# Release PR is merged. GoReleaser only appends the built binaries to it,
+# so it must not try to create or replace the release.
+release:
+  mode: append

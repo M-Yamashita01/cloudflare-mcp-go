@@ -2,113 +2,110 @@
 
 ## Overview
 
-This project uses a manual tag-based release flow. Releases are created only when features are sufficiently ready, not on every PR merge.
+This project uses an automated release flow driven by [release-please](https://github.com/googleapis/release-please)
+and Conventional Commits. There is no manual tagging.
 
-The release pipeline is: **tag push (`v*`) → CI (lint + test) → GoReleaser builds cross-platform binaries → GitHub Release created automatically**.
+The pipeline is:
 
-## When to Release
-
-- A meaningful set of features or fixes has been merged to `main`
-- All CI checks on `main` are passing
-- The codebase is in a stable, tested state
-
-There is no fixed schedule. Release when the changes are worth shipping.
-
-## Versioning
-
-Follow [Semantic Versioning](https://semver.org/):
-
-- **MAJOR** (`v1.0.0` → `v2.0.0`): Breaking changes (e.g., tool renamed, input schema changed)
-- **MINOR** (`v0.1.0` → `v0.2.0`): New features (e.g., new Cloudflare API tool added)
-- **PATCH** (`v0.1.0` → `v0.1.1`): Bug fixes, documentation updates
-
-While in `v0.x.x`, breaking changes may occur in MINOR versions.
-
-## Release Steps
-
-### 1. Verify main is stable
-
-```bash
-git checkout main
-git pull
+```
+Conventional Commits merged to main
+   |
+   v
+release-please keeps a Release PR up to date (version bump + CHANGELOG)
+   |
+   v  (you merge the Release PR when you decide to ship)
+release-please creates the tag and the GitHub Release
+   |
+   v
+GoReleaser builds cross-platform binaries and appends them to that release
 ```
 
-Confirm the latest CI run on `main` is green (lint + test passing).
+For the decision policy (when to ship, how to pick the version), see
+[versioning-policy.md](versioning-policy.md).
 
-### 2. Choose the version number
+## Conventional Commits
 
-Check the latest tag:
+release-please derives the next version from commit messages, so the prefix matters:
 
-```bash
-git tag --sort=-v:refname | head -5
-```
+| Prefix | Effect on version (while in 0.x) |
+|--------|----------------------------------|
+| `feat:` | MINOR bump (new feature) |
+| `fix:` | PATCH bump (bug fix) |
+| `fix(deps):` | PATCH bump (dependency update, used by Renovate) |
+| `feat!:` / `BREAKING CHANGE:` | MINOR bump (breaking changes stay MINOR until 1.0.0) |
+| `docs:`, `refactor:`, `perf:` | Appear in the changelog; no version bump on their own |
+| `chore:` | No version bump, hidden from the changelog |
 
-Decide the next version based on the changes since the last release.
+If nothing since the last release bumps the version, no Release PR is created,
+so weeks with only `chore:` changes produce no release.
 
-### 3. Create and push the tag
+## Releasing
 
-```bash
-git tag v0.2.0
-git push origin v0.2.0
-```
+### 1. Merge feature/fix PRs to main as usual
 
-### 4. CI builds and releases automatically
+Each PR should use a Conventional Commit title. When such commits land on `main`,
+the `Release Please` workflow opens or updates a single Release PR titled
+`chore(main): release x.y.z`.
 
-The `release.yml` GitHub Actions workflow will:
+### 2. Review the Release PR (typically weekly)
 
-1. Run lint (golangci-lint)
-2. Run tests (`go test -race ./...`)
-3. Build binaries via GoReleaser for:
-   - `linux/amd64`, `linux/arm64`
-   - `darwin/amd64`, `darwin/arm64`
-   - `windows/amd64`
-4. Create a GitHub Release with:
-   - Downloadable archives (`.tar.gz` for Linux/macOS, `.zip` for Windows)
-   - Auto-generated changelog from commits since the previous tag
+Open the Release PR and check:
+
+- The proposed version number matches the changes (see versioning-policy.md)
+- The generated `CHANGELOG.md` entry reads correctly
+
+If there is nothing worth shipping this week (for example, no user-facing change),
+leave the PR open and revisit next week.
+
+### 3. Merge the Release PR to release
+
+Merging the Release PR is the single "ship it" action. It:
+
+1. Updates `CHANGELOG.md` and `.release-please-manifest.json` on `main`
+2. Creates the git tag (e.g. `v0.2.1`)
+3. Creates the GitHub Release with the changelog as its body
+
+### 4. Binaries are built automatically
+
+The `goreleaser` job in the same workflow runs only when a release was created.
+It builds binaries for:
+
+- `linux/amd64`, `linux/arm64`
+- `darwin/amd64`, `darwin/arm64`
+- `windows/amd64`
+
+and appends the archives (`.tar.gz` for Linux/macOS, `.zip` for Windows) to the
+release that release-please created.
 
 ### 5. Verify the release
 
 - Check the [Releases page](https://github.com/M-Yamashita01/cloudflare-mcp-go/releases)
 - Confirm all platform binaries are attached
-- Review the auto-generated changelog and edit if needed
+- Confirm the changelog reads correctly
 
 ## Release Infrastructure
 
-The release pipeline consists of:
-
 | File | Purpose |
 |------|---------|
-| `.goreleaser.yml` | GoReleaser config (build targets, archive format, changelog) |
-| `.github/workflows/release.yml` | GitHub Actions workflow triggered by `v*` tag push |
-| `main.go` (`version` variable) | Version injected via `-ldflags` at build time |
+| `.github/workflows/release-please.yml` | Runs release-please on push to `main`; runs GoReleaser when a release is created |
+| `release-please-config.json` | release-please settings (release type, version bump rules, changelog sections) |
+| `.release-please-manifest.json` | Tracks the current released version |
+| `.goreleaser.yml` | GoReleaser config; `release.mode: append` so it adds binaries to the existing release |
+| `main.go` (`version` variable) | Version injected via `-ldflags` at build time by GoReleaser |
 
-### GoReleaser
+## Renovate
 
-- Builds static binaries (`CGO_ENABLED=0`)
-- Injects git tag version into `main.version` via ldflags
-- Generates changelog grouped by commit type (`feat:`, `fix:`, etc.)
-
-## User Installation
-
-After a release, users can download and use the binary without building from source:
-
-```bash
-# Download from GitHub Releases (example: macOS ARM64)
-curl -LO https://github.com/M-Yamashita01/cloudflare-mcp-go/releases/latest/download/cloudflare-mcp-go_Darwin_arm64.tar.gz
-tar xzf cloudflare-mcp-go_Darwin_arm64.tar.gz
-chmod +x cloudflare-mcp-go
-
-# Register with Claude Code
-claude mcp add cloudflare -- ./cloudflare-mcp-go
-```
+Renovate is configured to use `fix(deps):` commit messages (see `renovate.json`),
+so dependency updates become PATCH-level entries in the Release PR. This lets a
+weekly dependency refresh ship as a single patch release when you merge the Release PR.
 
 ## Fixing a Bad Release
 
-If a release has a critical issue:
+Prefer rolling forward: fix the issue on `main` and let the next Release PR ship a
+new patch version (e.g. `v0.2.2`).
 
-1. **Delete the release** from the GitHub Releases page
-2. **Delete the tag**: `git tag -d v0.2.0 && git push origin :refs/tags/v0.2.0`
-3. Fix the issue on `main`
-4. Re-tag and push: `git tag v0.2.0 && git push origin v0.2.0`
+If a release must be pulled:
 
-Or simply release a patch version (`v0.2.1`) with the fix.
+1. Delete the release from the GitHub Releases page
+2. Delete the tag: `git push origin :refs/tags/v0.2.1`
+3. Fix the issue on `main` and ship a new patch via the normal flow

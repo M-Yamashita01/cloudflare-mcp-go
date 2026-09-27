@@ -61,23 +61,24 @@ bump the version when you cut a release, batching the changes.
 
 ## Release Flow
 
-A tag push is the trigger; CI and the build run automatically.
+Releases are automated with release-please and Conventional Commits; there is no
+manual tagging. The version number is derived from commit prefixes, and merging
+the Release PR is the single decision point.
 
 ```
-main is stable (CI green)
+Conventional Commits merged to main
    |
    v
-Decide the next version (choose MAJOR/MINOR/PATCH per the policy above)
+release-please keeps a Release PR up to date (version bump + CHANGELOG)
+   |
+   v  (merge the Release PR when you decide to ship, per the timing above)
+release-please creates the tag and the GitHub Release
    |
    v
-Create and push a tag (e.g. git tag v0.2.1 && git push origin v0.2.1)
-   |
-   v
-release.yml fires -> lint + test -> GoReleaser builds per-OS binaries
-   |
-   v
-A GitHub Release is created automatically
+GoReleaser builds per-OS binaries and appends them to that release
 ```
 
-The concrete commands, the GoReleaser configuration, and how to fix a bad release
-are documented in release.md.
+Because the version comes from commit prefixes, use Conventional Commit titles
+(`feat:` for MINOR, `fix:` for PATCH, `feat!:` for breaking changes handled as MINOR
+while in 0.x). The concrete workflow files, configuration, and how to fix a bad
+release are documented in release.md.
