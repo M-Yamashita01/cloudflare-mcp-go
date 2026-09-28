@@ -25,7 +25,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
           USE_USER_TOKEN: "false"
-          TIER3_REGEX: '^\.github/workflows/release\.yml$|^\.goreleaser'
+          TIER3_REGEX: '^\.github/workflows/release(-please)?\.yml$|^\.goreleaser'
           COOLING_HOURS: "72"
         run: |
           set -euo pipefail
