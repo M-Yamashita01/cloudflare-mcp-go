@@ -317,6 +317,22 @@ func getZoneScans(ctx context.Context, _ *mcp.CallToolRequest, input GetZoneScan
 	return result, nil, err
 }
 
+// GetZoneIssueAuditLogInput holds parameters for a zone issue audit log.
+type GetZoneIssueAuditLogInput struct {
+	ZoneID  string `json:"zone_id"  jsonschema:"required,The ID of the zone"`
+	IssueID string `json:"issue_id" jsonschema:"required,The ID of the Security Center issue/insight"`
+}
+
+func getZoneIssueAuditLog(ctx context.Context, _ *mcp.CallToolRequest, input GetZoneIssueAuditLogInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := doGet(ctx, cfapi.APIBase+"/zones/"+input.ZoneID+"/security-center/insights/"+input.IssueID+"/audit-log", apiToken)
+	return result, nil, err
+}
+
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "list_security_insights",
@@ -397,4 +413,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "get_zone_recent_scans",
 		Description: "Get the recent Security Center scans for a Cloudflare zone.",
 	}, getZoneScans)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_zone_issue_audit_log",
+		Description: "Get the audit log for a specific Security Center insight (issue) in a Cloudflare zone by issue ID.",
+	}, getZoneIssueAuditLog)
 }
