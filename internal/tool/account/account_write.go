@@ -273,6 +273,26 @@ func createToken(ctx context.Context, _ *mcp.CallToolRequest, input CreateTokenI
 	return result, nil, err
 }
 
+// UpdateTokenInput holds parameters for updating an account API token.
+type UpdateTokenInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+	TokenID   string `json:"token_id"   jsonschema:"required,The ID of the API token"`
+	Config    string `json:"config"     jsonschema:"required,JSON object of token fields to update (name, status, policies, condition)"`
+}
+
+func updateToken(ctx context.Context, _ *mcp.CallToolRequest, input UpdateTokenInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+	if result := invalidJSON("config", input.Config); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := sendWrite(ctx, http.MethodPut, cfapi.APIBase+"/accounts/"+input.AccountID+"/tokens/"+input.TokenID, apiToken, bytes.NewReader([]byte(input.Config)))
+	return result, nil, err
+}
+
 // RegisterWriteTools registers account write (mutation) tools with the MCP server.
 //
 // It is called only when write mode is enabled via CLOUDFLARE_MCP_ENABLE_WRITE.
@@ -341,4 +361,9 @@ func RegisterWriteTools(server *mcp.Server) {
 		Name:        "create_account_token",
 		Description: "Create an account-owned API token. The config argument is a JSON object (name, policies, condition, expires_on). The token value is returned once.",
 	}, createToken)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "update_account_token",
+		Description: "Update an account-owned API token by token ID. The config argument is a JSON object of fields to change (name, status, policies).",
+	}, updateToken)
 }
