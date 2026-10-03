@@ -25,7 +25,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 
 ## Tools
 
-98 read-only tools grouped by domain, plus optional write tools (marked below) that are registered only when `CLOUDFLARE_MCP_ENABLE_WRITE=true`.
+99 read-only tools grouped by domain, plus optional write tools (marked below) that are registered only when `CLOUDFLARE_MCP_ENABLE_WRITE=true`.
 
 ### Zones & DNS
 
@@ -182,6 +182,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 | `download_indicator_feed_data` | Download latest indicator feed snapshot by ID. |
 | `get_indicator_feed_upload_status` | Get status of an indicator feed upload. |
 | `list_sinkholes` | List DNS sinkholes owned by an account. |
+| `get_sinkhole` | Get a DNS sinkhole by ID. |
 
 ### Account & audit
 
