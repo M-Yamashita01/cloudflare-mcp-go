@@ -118,6 +118,25 @@ func createFeedProvider(ctx context.Context, _ *mcp.CallToolRequest, input Creat
 	return result, nil, err
 }
 
+// RevokeFeedPermissionInput holds parameters for revoking indicator feed permission.
+type RevokeFeedPermissionInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+	Config    string `json:"config"     jsonschema:"required,JSON object with the feed_id to revoke permission for"`
+}
+
+func revokeFeedPermission(ctx context.Context, _ *mcp.CallToolRequest, input RevokeFeedPermissionInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+	if result := invalidJSON("config", input.Config); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := sendWrite(ctx, http.MethodPut, cfapi.APIBase+"/accounts/"+input.AccountID+"/intel/indicator-feeds/permissions/remove", apiToken, bytes.NewReader([]byte(input.Config)))
+	return result, nil, err
+}
+
 // RegisterWriteTools registers intel write (mutation) tools with the MCP server.
 //
 // It is called only when write mode is enabled via CLOUDFLARE_MCP_ENABLE_WRITE.
@@ -141,4 +160,9 @@ func RegisterWriteTools(server *mcp.Server) {
 		Name:        "create_indicator_feed_provider",
 		Description: "Create an indicator feed provider for a Cloudflare account. The config argument is a JSON object describing the provider.",
 	}, createFeedProvider)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "revoke_indicator_feed_permission",
+		Description: "Revoke an account's permission to view a threat-intelligence indicator feed. The config argument is a JSON object with the feed_id.",
+	}, revokeFeedPermission)
 }
