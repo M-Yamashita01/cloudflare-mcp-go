@@ -524,6 +524,21 @@ func getAuditLogHistory(ctx context.Context, _ *mcp.CallToolRequest, input GetAu
 	return result, nil, err
 }
 
+// GetCMBConfigInput holds parameters for getting the Customer Metadata Boundary config in an account.
+type GetCMBConfigInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+}
+
+func getCMBConfig(ctx context.Context, _ *mcp.CallToolRequest, input GetCMBConfigInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := doGet(ctx, cfapi.APIBase+"/accounts/"+input.AccountID+"/logs/control/cmb/config", apiToken)
+	return result, nil, err
+}
+
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "get_log_by_rayid",
@@ -644,4 +659,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "get_account_audit_log_history",
 		Description: "Get the resource change history for a specific account audit log entry (v2) by entry ID.",
 	}, getAuditLogHistory)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_cmb_config",
+		Description: "Get the Customer Metadata Boundary (CMB) config for a Cloudflare account (data localization region for logs).",
+	}, getCMBConfig)
 }
