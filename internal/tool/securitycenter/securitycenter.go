@@ -192,6 +192,22 @@ func getAccountIssueAuditLog(ctx context.Context, _ *mcp.CallToolRequest, input 
 	return result, nil, err
 }
 
+// GetAccountInsightContextInput holds parameters for an account insight context.
+type GetAccountInsightContextInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+	IssueID   string `json:"issue_id"   jsonschema:"required,The ID of the Security Center issue/insight"`
+}
+
+func getAccountInsightContext(ctx context.Context, _ *mcp.CallToolRequest, input GetAccountInsightContextInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := doGet(ctx, cfapi.APIBase+"/accounts/"+input.AccountID+"/security-center/insights/"+input.IssueID+"/context", apiToken)
+	return result, nil, err
+}
+
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "list_security_insights",
@@ -232,4 +248,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "get_account_issue_audit_log",
 		Description: "Get the audit log for a specific Security Center insight (issue) in a Cloudflare account by issue ID.",
 	}, getAccountIssueAuditLog)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_account_insight_context",
+		Description: "Get the context (affected resources and details) for a specific Security Center insight in a Cloudflare account by issue ID.",
+	}, getAccountInsightContext)
 }

@@ -149,3 +149,19 @@ func Test_getAccountIssueAuditLog_returns_error_when_token_is_not_set(t *testing
 		t.Error("got IsError = false, want true")
 	}
 }
+
+func Test_getAccountInsightContext_returns_error_when_token_is_not_set(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := getAccountInsightContext(context.Background(), &mcp.CallToolRequest{}, GetAccountInsightContextInput{AccountID: "acc123", IssueID: "i1"})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}
