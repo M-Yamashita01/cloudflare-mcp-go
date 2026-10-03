@@ -130,6 +130,25 @@ func validateAccountLogpushOwnership(ctx context.Context, _ *mcp.CallToolRequest
 	return result, nil, err
 }
 
+// CreateAccountLogpushTransformerInput holds parameters for creating a Logpush transformer in an account.
+type CreateAccountLogpushTransformerInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+	Config    string `json:"config"     jsonschema:"required,JSON object describing the transformer (name, content, etc.)"`
+}
+
+func createAccountLogpushTransformer(ctx context.Context, _ *mcp.CallToolRequest, input CreateAccountLogpushTransformerInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+	if result := invalidJSON("config", input.Config); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := sendWrite(ctx, http.MethodPost, cfapi.APIBase+"/accounts/"+input.AccountID+"/logpush/transformers", apiToken, bytes.NewReader([]byte(input.Config)))
+	return result, nil, err
+}
+
 // RegisterWriteTools registers logs write (mutation) tools with the MCP server.
 //
 // It is called only when write mode is enabled via CLOUDFLARE_MCP_ENABLE_WRITE.
@@ -158,4 +177,9 @@ func RegisterWriteTools(server *mcp.Server) {
 		Name:        "validate_account_logpush_ownership",
 		Description: "Validate a Logpush ownership challenge for a Cloudflare account. The config argument is a JSON object with destination_conf and ownership_challenge.",
 	}, validateAccountLogpushOwnership)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "create_account_logpush_transformer",
+		Description: "Create a Logpush transformer for a Cloudflare account. The config argument is a JSON object (name, content, etc.).",
+	}, createAccountLogpushTransformer)
 }
