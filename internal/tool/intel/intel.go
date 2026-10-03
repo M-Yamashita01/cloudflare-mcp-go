@@ -274,6 +274,21 @@ func getASRClassCounts(ctx context.Context, _ *mcp.CallToolRequest, input GetASR
 	return result, nil, err
 }
 
+// GetASRSeverityCountsInput holds parameters for attack-surface issue counts by severity.
+type GetASRSeverityCountsInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+}
+
+func getASRSeverityCounts(ctx context.Context, _ *mcp.CallToolRequest, input GetASRSeverityCountsInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := doGet(ctx, cfapi.APIBase+"/accounts/"+input.AccountID+"/intel/attack-surface-report/issues/severity", apiToken)
+	return result, nil, err
+}
+
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "get_ip_intel",
@@ -324,4 +339,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "get_attack_surface_issue_counts_by_class",
 		Description: "Get Security Center attack-surface issue counts grouped by class for a Cloudflare account.",
 	}, getASRClassCounts)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_attack_surface_issue_counts_by_severity",
+		Description: "Get Security Center attack-surface issue counts grouped by severity for a Cloudflare account.",
+	}, getASRSeverityCounts)
 }
