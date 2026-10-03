@@ -193,6 +193,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 | `remove_account_member` | Remove a member from an account (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `create_account_subscription` | Create an account subscription (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `cancel_delayed_downgrade` | Cancel a pending subscription downgrade (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
+| `update_account_subscription` | Update an account subscription (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `list_audit_logs` | Account audit log entries (who changed what and when). |
 | `list_user_audit_logs` | User-scoped audit log entries. |
 | `list_kv_namespaces` | Workers KV namespaces in an account. |
