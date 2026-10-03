@@ -539,6 +539,21 @@ func getCMBConfig(ctx context.Context, _ *mcp.CallToolRequest, input GetCMBConfi
 	return result, nil, err
 }
 
+// ListAccountLogDatasetsInput holds parameters for listing Logs Explorer datasets in an account.
+type ListAccountLogDatasetsInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+}
+
+func listAccountLogDatasets(ctx context.Context, _ *mcp.CallToolRequest, input ListAccountLogDatasetsInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := doGet(ctx, cfapi.APIBase+"/accounts/"+input.AccountID+"/logs/explorer/datasets", apiToken)
+	return result, nil, err
+}
+
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "get_log_by_rayid",
@@ -664,4 +679,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "get_cmb_config",
 		Description: "Get the Customer Metadata Boundary (CMB) config for a Cloudflare account (data localization region for logs).",
 	}, getCMBConfig)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "list_account_log_datasets",
+		Description: "List Logs Explorer datasets configured for a Cloudflare account.",
+	}, listAccountLogDatasets)
 }
