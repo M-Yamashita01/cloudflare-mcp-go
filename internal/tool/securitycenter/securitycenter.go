@@ -208,6 +208,22 @@ func getAccountInsightContext(ctx context.Context, _ *mcp.CallToolRequest, input
 	return result, nil, err
 }
 
+// GetPartnerSettingsInput holds parameters for partner integration settings.
+type GetPartnerSettingsInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+	Partner   string `json:"partner"    jsonschema:"required,The partner identifier"`
+}
+
+func getPartnerSettings(ctx context.Context, _ *mcp.CallToolRequest, input GetPartnerSettingsInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := doGet(ctx, cfapi.APIBase+"/accounts/"+input.AccountID+"/security-center/partners/"+input.Partner+"/settings", apiToken)
+	return result, nil, err
+}
+
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "list_security_insights",
@@ -253,4 +269,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "get_account_insight_context",
 		Description: "Get the context (affected resources and details) for a specific Security Center insight in a Cloudflare account by issue ID.",
 	}, getAccountInsightContext)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_partner_integration_settings",
+		Description: "Get the Security Center partner integration settings for a Cloudflare account and partner.",
+	}, getPartnerSettings)
 }
