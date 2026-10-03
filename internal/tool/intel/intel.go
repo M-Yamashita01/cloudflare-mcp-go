@@ -363,6 +363,21 @@ func getURLIntel(ctx context.Context, _ *mcp.CallToolRequest, input GetURLIntelI
 	return result, nil, err
 }
 
+// ListIndicatorFeedsInput holds parameters for listing indicator feeds.
+type ListIndicatorFeedsInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+}
+
+func listIndicatorFeeds(ctx context.Context, _ *mcp.CallToolRequest, input ListIndicatorFeedsInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := doGet(ctx, cfapi.APIBase+"/accounts/"+input.AccountID+"/intel/indicator-feeds", apiToken)
+	return result, nil, err
+}
+
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "get_ip_intel",
@@ -438,4 +453,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "get_url_intel",
 		Description: "Get threat intelligence for a URL. Returns risk and category information for the URL.",
 	}, getURLIntel)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "list_indicator_feeds",
+		Description: "List the threat-intelligence indicator feeds owned by a Cloudflare account.",
+	}, listIndicatorFeeds)
 }
