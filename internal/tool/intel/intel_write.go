@@ -256,6 +256,26 @@ func createSinkhole(ctx context.Context, _ *mcp.CallToolRequest, input CreateSin
 	return result, nil, err
 }
 
+// UpdateSinkholeInput holds parameters for updating a sinkhole.
+type UpdateSinkholeInput struct {
+	AccountID  string `json:"account_id"  jsonschema:"required,The ID of the Cloudflare account"`
+	SinkholeID string `json:"sinkhole_id" jsonschema:"required,The ID of the sinkhole"`
+	Config     string `json:"config"      jsonschema:"required,JSON object of sinkhole fields to update"`
+}
+
+func updateSinkhole(ctx context.Context, _ *mcp.CallToolRequest, input UpdateSinkholeInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+	if result := invalidJSON("config", input.Config); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := sendWrite(ctx, http.MethodPut, cfapi.APIBase+"/accounts/"+input.AccountID+"/intel/sinkholes/"+input.SinkholeID, apiToken, bytes.NewReader([]byte(input.Config)))
+	return result, nil, err
+}
+
 // RegisterWriteTools registers intel write (mutation) tools with the MCP server.
 //
 // It is called only when write mode is enabled via CLOUDFLARE_MCP_ENABLE_WRITE.
@@ -304,4 +324,9 @@ func RegisterWriteTools(server *mcp.Server) {
 		Name:        "create_sinkhole",
 		Description: "Create a new DNS sinkhole for a Cloudflare account. The config argument is a JSON object describing the sinkhole.",
 	}, createSinkhole)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "update_sinkhole",
+		Description: "Update a DNS sinkhole by ID for a Cloudflare account. The config argument is a JSON object of fields to change.",
+	}, updateSinkhole)
 }
