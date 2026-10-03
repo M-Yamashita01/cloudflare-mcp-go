@@ -118,3 +118,19 @@ func Test_createAccountLogpushTransformer_returns_error_when_token_is_not_set(t 
 		t.Error("got IsError = false, want true")
 	}
 }
+
+func Test_previewAccountLogpushTransformer_returns_error_when_token_is_not_set(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := previewAccountLogpushTransformer(context.Background(), &mcp.CallToolRequest{}, PreviewAccountLogpushTransformerInput{AccountID: "acc123", Config: `{"content":"x"}`})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}
