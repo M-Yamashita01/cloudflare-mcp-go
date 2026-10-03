@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -538,6 +539,27 @@ func validateLogpushOrigin(ctx context.Context, _ *mcp.CallToolRequest, input Va
 	return result, nil, err
 }
 
+// UpdateRetentionFlagInput holds parameters for updating a zone's log retention flag.
+type UpdateRetentionFlagInput struct {
+	ZoneID string `json:"zone_id" jsonschema:"required,The ID of the zone"`
+	Flag   bool   `json:"flag"    jsonschema:"required,Whether to enable (true) or disable (false) Logpull log retention"`
+}
+
+func updateRetentionFlag(ctx context.Context, _ *mcp.CallToolRequest, input UpdateRetentionFlagInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	payload, err := json.Marshal(map[string]any{"flag": input.Flag})
+	if err != nil {
+		return nil, nil, fmt.Errorf("marshaling request body: %w", err)
+	}
+
+	result, err := sendWrite(ctx, http.MethodPost, cfapi.APIBase+"/zones/"+input.ZoneID+"/logs/control/retention/flag", apiToken, bytes.NewReader(payload))
+	return result, nil, err
+}
+
 // RegisterWriteTools registers logs write (mutation) tools with the MCP server.
 //
 // It is called only when write mode is enabled via CLOUDFLARE_MCP_ENABLE_WRITE.
@@ -676,4 +698,9 @@ func RegisterWriteTools(server *mcp.Server) {
 		Name:        "validate_logpush_origin",
 		Description: "Validate Logpush origin options (logpull_options) for a Cloudflare zone. The config argument is a JSON object with logpull_options and dataset.",
 	}, validateLogpushOrigin)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "update_log_retention_flag",
+		Description: "Enable or disable Logpull log retention for a Cloudflare zone by setting the retention flag.",
+	}, updateRetentionFlag)
 }
