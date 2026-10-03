@@ -207,6 +207,35 @@ func getCancelReason(ctx context.Context, _ *mcp.CallToolRequest, input GetCance
 	return result, nil, err
 }
 
+// ListTokensInput holds parameters for listing account API tokens.
+type ListTokensInput struct {
+	AccountID string `json:"account_id"         jsonschema:"required,The ID of the Cloudflare account"`
+	Page      int    `json:"page,omitempty"     jsonschema:"Page number of paginated results (default: 1)"`
+	PerPage   int    `json:"per_page,omitempty" jsonschema:"Number of tokens per page (default: 20, max: 50)"`
+}
+
+func listTokens(ctx context.Context, _ *mcp.CallToolRequest, input ListTokensInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	url := cfapi.APIBase + "/accounts/" + input.AccountID + "/tokens"
+	var params []string
+	if input.Page > 0 {
+		params = append(params, fmt.Sprintf("page=%d", input.Page))
+	}
+	if input.PerPage > 0 {
+		params = append(params, fmt.Sprintf("per_page=%d", input.PerPage))
+	}
+	if len(params) > 0 {
+		url += "?" + strings.Join(params, "&")
+	}
+
+	result, err := doGet(ctx, url, apiToken)
+	return result, nil, err
+}
+
 // RegisterTools registers account management tools with the MCP server.
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
@@ -253,4 +282,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "get_subscription_cancel_reason",
 		Description: "Get the cancellation reason recorded for a Cloudflare account subscription.",
 	}, getCancelReason)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "list_account_tokens",
+		Description: "List the account-owned API tokens for a Cloudflare account. Returns token IDs, names, status, and policies.",
+	}, listTokens)
 }
