@@ -257,6 +257,21 @@ func listShadowZoneHosts(ctx context.Context, _ *mcp.CallToolRequest, input List
 	return result, nil, err
 }
 
+// GetAccountStateInput holds parameters for the account Security Center state.
+type GetAccountStateInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+}
+
+func getAccountState(ctx context.Context, _ *mcp.CallToolRequest, input GetAccountStateInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := doGet(ctx, cfapi.APIBase+"/accounts/"+input.AccountID+"/security-center/state", apiToken)
+	return result, nil, err
+}
+
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "list_security_insights",
@@ -317,4 +332,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "list_partner_shadow_zone_hosts",
 		Description: "List the hosts in a partner-discovered shadow zone for a Cloudflare account, partner, and domain.",
 	}, listShadowZoneHosts)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_account_security_center_state",
+		Description: "Get the Security Center state (onboarding/configuration status) for a Cloudflare account.",
+	}, getAccountState)
 }

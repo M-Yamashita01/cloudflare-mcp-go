@@ -25,7 +25,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 
 ## Tools
 
-110 read-only tools grouped by domain, plus optional write tools (marked below) that are registered only when `CLOUDFLARE_MCP_ENABLE_WRITE=true`.
+111 read-only tools grouped by domain, plus optional write tools (marked below) that are registered only when `CLOUDFLARE_MCP_ENABLE_WRITE=true`.
 
 ### Zones & DNS
 
@@ -164,6 +164,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 | `get_partner_integration_settings` | Partner integration settings for an account. |
 | `list_partner_shadow_zones` | Partner-discovered shadow zones for an account. |
 | `list_partner_shadow_zone_hosts` | Hosts in a partner-discovered shadow zone. |
+| `get_account_security_center_state` | Security Center state for an account. |
 | `get_insight_counts` | Aggregated insight counts by severity, class, or type. |
 
 ### Threat intelligence
