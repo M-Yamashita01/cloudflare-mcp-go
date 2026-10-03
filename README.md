@@ -25,7 +25,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 
 ## Tools
 
-93 read-only tools grouped by domain, plus optional write tools (marked below) that are registered only when `CLOUDFLARE_MCP_ENABLE_WRITE=true`.
+94 read-only tools grouped by domain, plus optional write tools (marked below) that are registered only when `CLOUDFLARE_MCP_ENABLE_WRITE=true`.
 
 ### Zones & DNS
 
@@ -177,6 +177,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 | `get_url_intel` | Threat intelligence for a URL (risk, categories). |
 | `list_indicator_feeds` | List indicator feeds owned by an account. |
 | `list_indicator_feed_permissions` | List indicator feed view permissions for an account. |
+| `get_indicator_feed` | Get indicator feed metadata by ID. |
 
 ### Account & audit
 
