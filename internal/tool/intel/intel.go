@@ -482,6 +482,21 @@ func getFeedUploadStatus(ctx context.Context, _ *mcp.CallToolRequest, input GetF
 	return result, nil, err
 }
 
+// ListSinkholesInput holds parameters for listing sinkholes.
+type ListSinkholesInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+}
+
+func listSinkholes(ctx context.Context, _ *mcp.CallToolRequest, input ListSinkholesInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := doGet(ctx, cfapi.APIBase+"/accounts/"+input.AccountID+"/intel/sinkholes", apiToken)
+	return result, nil, err
+}
+
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "get_ip_intel",
@@ -587,4 +602,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "get_indicator_feed_upload_status",
 		Description: "Get the status of a specific upload to a threat-intelligence indicator feed by feed ID and upload ID.",
 	}, getFeedUploadStatus)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "list_sinkholes",
+		Description: "List the DNS sinkholes owned by a Cloudflare account.",
+	}, listSinkholes)
 }
