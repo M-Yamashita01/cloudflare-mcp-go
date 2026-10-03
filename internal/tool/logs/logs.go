@@ -460,6 +460,39 @@ func listAccountLogpushTransformerVersions(ctx context.Context, _ *mcp.CallToolR
 	return result, nil, err
 }
 
+// GetAccountAuditLogsInput holds parameters for the account audit logs (v2) endpoint.
+type GetAccountAuditLogsInput struct {
+	AccountID string `json:"account_id"     jsonschema:"required,The ID of the Cloudflare account"`
+	Since     string `json:"since,omitempty" jsonschema:"Start time in RFC3339 format"`
+	Before    string `json:"before,omitempty" jsonschema:"End time in RFC3339 format"`
+	Limit     int    `json:"limit,omitempty" jsonschema:"Maximum number of entries to return"`
+}
+
+func getAccountAuditLogs(ctx context.Context, _ *mcp.CallToolRequest, input GetAccountAuditLogsInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	reqURL := cfapi.APIBase + "/accounts/" + input.AccountID + "/logs/audit"
+	var params []string
+	if input.Since != "" {
+		params = append(params, "since="+url.QueryEscape(input.Since))
+	}
+	if input.Before != "" {
+		params = append(params, "before="+url.QueryEscape(input.Before))
+	}
+	if input.Limit > 0 {
+		params = append(params, fmt.Sprintf("limit=%d", input.Limit))
+	}
+	if len(params) > 0 {
+		reqURL += "?" + strings.Join(params, "&")
+	}
+
+	result, err := doGet(ctx, reqURL, apiToken)
+	return result, nil, err
+}
+
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "get_log_by_rayid",
@@ -565,4 +598,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "list_account_logpush_transformer_versions",
 		Description: "List the versions of a specific Logpush transformer in a Cloudflare account.",
 	}, listAccountLogpushTransformerVersions)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_account_audit_logs_v2",
+		Description: "Get account audit logs (Version 2) for a Cloudflare account. Supports since/before time filters and a limit. Records who changed what and when.",
+	}, getAccountAuditLogs)
 }
