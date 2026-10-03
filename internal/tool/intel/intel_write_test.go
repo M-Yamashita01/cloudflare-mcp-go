@@ -70,3 +70,19 @@ func Test_grantFeedPermission_returns_error_when_token_is_not_set(t *testing.T) 
 		t.Error("got IsError = false, want true")
 	}
 }
+
+func Test_createFeedProvider_returns_error_when_token_is_not_set(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := createFeedProvider(context.Background(), &mcp.CallToolRequest{}, CreateFeedProviderInput{AccountID: "acc123", Config: `{"name":"p"}`})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}
