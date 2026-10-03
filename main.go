@@ -8,6 +8,7 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
+	"github.com/M-Yamashita01/cloudflare-mcp-go/internal/cfapi"
 	"github.com/M-Yamashita01/cloudflare-mcp-go/internal/tool/account"
 	"github.com/M-Yamashita01/cloudflare-mcp-go/internal/tool/audit"
 	"github.com/M-Yamashita01/cloudflare-mcp-go/internal/tool/dns"
@@ -30,6 +31,12 @@ func main() {
 		nil,
 	)
 
+	writeEnabled, warn := cfapi.WriteEnabled()
+	if warn != "" {
+		log.Println(warn)
+	}
+
+	// Read-only tools are always registered.
 	zone.RegisterTools(server)
 	dns.RegisterTools(server)
 	account.RegisterTools(server)
@@ -39,6 +46,14 @@ func main() {
 	logs.RegisterTools(server)
 	security.RegisterTools(server)
 	securitycenter.RegisterTools(server)
+
+	// Write (mutation) tools are registered only when enabled via
+	// CLOUDFLARE_MCP_ENABLE_WRITE=true, so they stay out of tools/list by
+	// default. No write tools exist yet; they will be wired here
+	// (e.g. dns.RegisterWriteTools(server)). See issue #107.
+	if writeEnabled {
+		log.Println("Write tools enabled via " + cfapi.EnableWriteEnv)
+	}
 
 	log.Println("Starting Cloudflare MCP server (stdio)...")
 	if err := server.Run(context.Background(), &mcp.StdioTransport{}); err != nil {

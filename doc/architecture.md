@@ -142,3 +142,31 @@ To add a new Cloudflare API tool:
 |----------|----------|-------------|
 | `CLOUDFLARE_API_TOKEN` | Yes | Cloudflare API token for authentication |
 | `CLOUDFLARE_ACCOUNT_ID` | No | Used by some tools (e.g., KV namespaces) passed as input |
+| `CLOUDFLARE_MCP_ENABLE_WRITE` | No | Enables write (mutation) tools when set to exactly `true`. Unset or empty keeps them disabled (default). Any other value logs an error to stderr and starts in read-only mode. |
+
+## Write (Mutation) Tools Gate
+
+Write tools (create/update/delete) are disabled by default. They are registered
+only when `CLOUDFLARE_MCP_ENABLE_WRITE=true`, so they never appear in the MCP
+`tools/list` when disabled.
+
+The gate is resolved once at startup via `cfapi.WriteEnabled()`:
+
+- Unset or empty → disabled, no warning.
+- Exactly `true` → enabled.
+- Any other value (e.g. `TRUE`, `1`, `yes`) → disabled, with an error logged to
+  stderr. The server still starts so read-only tools remain usable.
+
+`main.go` registers read-only tools unconditionally and guards write-tool
+registration behind the resolved flag:
+
+```go
+writeEnabled, warn := cfapi.WriteEnabled()
+if warn != "" {
+    log.Println(warn)
+}
+// read-only tools always registered...
+if writeEnabled {
+    // dns.RegisterWriteTools(server) // added by follow-up work
+}
+```
