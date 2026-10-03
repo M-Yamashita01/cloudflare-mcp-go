@@ -175,6 +175,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 | `dismiss_account_insight` | Dismiss/archive an account insight (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `start_account_scan` | Start an on-demand account Security Center scan (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `update_partner_integration_settings` | Update Security Center partner integration settings for an account (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
+| `update_account_security_center_state` | Update the Security Center state for an account (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `get_insight_counts` | Aggregated insight counts by severity, class, or type. |
 
 ### Threat intelligence
