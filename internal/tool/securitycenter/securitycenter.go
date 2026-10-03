@@ -146,6 +146,21 @@ func getAccountInsightsAuditLog(ctx context.Context, _ *mcp.CallToolRequest, inp
 	return result, nil, err
 }
 
+// GetAccountPartnerCountInput holds parameters for the account partner insight count.
+type GetAccountPartnerCountInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+}
+
+func getAccountPartnerCount(ctx context.Context, _ *mcp.CallToolRequest, input GetAccountPartnerCountInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := doGet(ctx, cfapi.APIBase+"/accounts/"+input.AccountID+"/security-center/insights/partner-count", apiToken)
+	return result, nil, err
+}
+
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "list_security_insights",
@@ -171,4 +186,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "get_account_insights_audit_log",
 		Description: "Get the Security Center insights audit log for a Cloudflare account (changes to insights over time).",
 	}, getAccountInsightsAuditLog)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_account_partner_insight_count",
+		Description: "Get the count of partner-provided Security Center insights for a Cloudflare account.",
+	}, getAccountPartnerCount)
 }

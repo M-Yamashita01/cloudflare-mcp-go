@@ -101,3 +101,19 @@ func Test_getAccountInsightsAuditLog_returns_error_when_token_is_not_set(t *test
 		t.Error("got IsError = false, want true")
 	}
 }
+
+func Test_getAccountPartnerCount_returns_error_when_token_is_not_set(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := getAccountPartnerCount(context.Background(), &mcp.CallToolRequest{}, GetAccountPartnerCountInput{AccountID: "acc123"})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}
