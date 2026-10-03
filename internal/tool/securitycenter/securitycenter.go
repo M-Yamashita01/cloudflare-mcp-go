@@ -333,6 +333,22 @@ func getZoneIssueAuditLog(ctx context.Context, _ *mcp.CallToolRequest, input Get
 	return result, nil, err
 }
 
+// ListZoneShadowHostsInput holds parameters for listing partner-discovered shadow hosts for a zone.
+type ListZoneShadowHostsInput struct {
+	ZoneID  string `json:"zone_id" jsonschema:"required,The ID of the zone"`
+	Partner string `json:"partner" jsonschema:"required,The partner identifier"`
+}
+
+func listZoneShadowHosts(ctx context.Context, _ *mcp.CallToolRequest, input ListZoneShadowHostsInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := doGet(ctx, cfapi.APIBase+"/zones/"+input.ZoneID+"/security-center/partners/"+input.Partner+"/shadow-hosts", apiToken)
+	return result, nil, err
+}
+
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "list_security_insights",
@@ -418,4 +434,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "get_zone_issue_audit_log",
 		Description: "Get the audit log for a specific Security Center insight (issue) in a Cloudflare zone by issue ID.",
 	}, getZoneIssueAuditLog)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "list_zone_partner_shadow_hosts",
+		Description: "List partner-discovered shadow hosts for a Cloudflare zone and partner.",
+	}, listZoneShadowHosts)
 }
