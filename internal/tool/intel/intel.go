@@ -216,6 +216,34 @@ func getDomainIntelBulk(ctx context.Context, _ *mcp.CallToolRequest, input GetDo
 }
 
 // RegisterTools registers threat intelligence tools with the MCP server.
+// doGet performs a GET against the standard Cloudflare REST API and formats the
+// response. It is shared by the newer intel read tools.
+func doGet(ctx context.Context, url, apiToken string) (*mcp.CallToolResult, error) {
+	cfResp, err := cfapi.DoRequest(ctx, http.MethodGet, url, apiToken, nil)
+	if err != nil {
+		return nil, err
+	}
+	if !cfResp.Success {
+		return cfapi.APIErrorResult(cfResp.Errors), nil
+	}
+	return cfapi.FormatResult(cfResp)
+}
+
+// ListASRIssueTypesInput holds parameters for listing attack-surface issue types.
+type ListASRIssueTypesInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+}
+
+func listASRIssueTypes(ctx context.Context, _ *mcp.CallToolRequest, input ListASRIssueTypesInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := doGet(ctx, cfapi.APIBase+"/accounts/"+input.AccountID+"/intel/attack-surface-report/issue-types", apiToken)
+	return result, nil, err
+}
+
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "get_ip_intel",
@@ -251,4 +279,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "get_domain_intel_bulk",
 		Description: "Get threat intelligence for multiple domains at once. Returns risk scores and content categories for each domain. Useful for batch assessment of suspicious domains found in logs.",
 	}, getDomainIntelBulk)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "list_attack_surface_issue_types",
+		Description: "List the Security Center attack-surface-report issue types for a Cloudflare account.",
+	}, listASRIssueTypes)
 }
