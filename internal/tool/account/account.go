@@ -266,6 +266,22 @@ func verifyToken(ctx context.Context, _ *mcp.CallToolRequest, input VerifyTokenI
 	return result, nil, err
 }
 
+// GetTokenInput holds parameters for getting an account API token.
+type GetTokenInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+	TokenID   string `json:"token_id"   jsonschema:"required,The ID of the API token"`
+}
+
+func getToken(ctx context.Context, _ *mcp.CallToolRequest, input GetTokenInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := doGet(ctx, cfapi.APIBase+"/accounts/"+input.AccountID+"/tokens/"+input.TokenID, apiToken)
+	return result, nil, err
+}
+
 // RegisterTools registers account management tools with the MCP server.
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
@@ -327,4 +343,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "verify_account_token",
 		Description: "Verify the account-owned API token used for the request (checks it is valid and active) for a Cloudflare account.",
 	}, verifyToken)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_account_token",
+		Description: "Get details of a specific account-owned API token by token ID (name, status, policies, condition).",
+	}, getToken)
 }

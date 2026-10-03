@@ -25,7 +25,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 
 ## Tools
 
-82 read-only tools grouped by domain, plus optional write tools (marked below) that are registered only when `CLOUDFLARE_MCP_ENABLE_WRITE=true`.
+83 read-only tools grouped by domain, plus optional write tools (marked below) that are registered only when `CLOUDFLARE_MCP_ENABLE_WRITE=true`.
 
 ### Zones & DNS
 
@@ -184,6 +184,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 | `list_account_tokens` | List account-owned API tokens. |
 | `list_token_permission_groups` | List permission groups for account API tokens. |
 | `verify_account_token` | Verify the account API token is valid and active. |
+| `get_account_token` | Get an account API token by ID (name, policies, status). |
 | `list_audit_logs` | Account audit log entries (who changed what and when). |
 | `list_user_audit_logs` | User-scoped audit log entries. |
 | `list_kv_namespaces` | Workers KV namespaces in an account. |
