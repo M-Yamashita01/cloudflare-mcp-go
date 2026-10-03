@@ -293,6 +293,22 @@ func updateToken(ctx context.Context, _ *mcp.CallToolRequest, input UpdateTokenI
 	return result, nil, err
 }
 
+// DeleteTokenInput holds parameters for deleting an account API token.
+type DeleteTokenInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+	TokenID   string `json:"token_id"   jsonschema:"required,The ID of the API token to delete"`
+}
+
+func deleteToken(ctx context.Context, _ *mcp.CallToolRequest, input DeleteTokenInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := sendWrite(ctx, http.MethodDelete, cfapi.APIBase+"/accounts/"+input.AccountID+"/tokens/"+input.TokenID, apiToken, nil)
+	return result, nil, err
+}
+
 // RegisterWriteTools registers account write (mutation) tools with the MCP server.
 //
 // It is called only when write mode is enabled via CLOUDFLARE_MCP_ENABLE_WRITE.
@@ -366,4 +382,9 @@ func RegisterWriteTools(server *mcp.Server) {
 		Name:        "update_account_token",
 		Description: "Update an account-owned API token by token ID. The config argument is a JSON object of fields to change (name, status, policies).",
 	}, updateToken)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "delete_account_token",
+		Description: "Delete an account-owned API token by token ID.",
+	}, deleteToken)
 }
