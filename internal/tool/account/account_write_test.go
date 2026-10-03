@@ -198,3 +198,19 @@ func Test_appendSubscriptionAction_returns_error_when_token_is_not_set(t *testin
 		t.Error("got IsError = false, want true")
 	}
 }
+
+func Test_createCancelReason_returns_error_when_token_is_not_set(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := createCancelReason(context.Background(), &mcp.CallToolRequest{}, CreateCancelReasonInput{AccountID: "acc123", SubscriptionID: "s1", Config: `{"reason":"x"}`})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}
