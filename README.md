@@ -197,6 +197,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 | `delete_account_subscription` | Delete an account subscription (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `append_subscription_action` | Append an action to a subscription (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `create_subscription_cancel_reason` | Record a subscription cancellation reason (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
+| `create_account_token` | Create an account API token (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `list_audit_logs` | Account audit log entries (who changed what and when). |
 | `list_user_audit_logs` | User-scoped audit log entries. |
 | `list_kv_namespaces` | Workers KV namespaces in an account. |
