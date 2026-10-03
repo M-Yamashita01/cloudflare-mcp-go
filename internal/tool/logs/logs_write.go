@@ -350,6 +350,25 @@ func deleteAccountLogDataset(ctx context.Context, _ *mcp.CallToolRequest, input 
 	return result, nil, err
 }
 
+// RunAccountLogsSQLInput holds parameters for running a Logs Explorer SQL query (POST) in an account.
+type RunAccountLogsSQLInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+	Config    string `json:"config"     jsonschema:"required,JSON object with the SQL query and options"`
+}
+
+func runAccountLogsSQL(ctx context.Context, _ *mcp.CallToolRequest, input RunAccountLogsSQLInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+	if result := invalidJSON("config", input.Config); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := sendWrite(ctx, http.MethodPost, cfapi.APIBase+"/accounts/"+input.AccountID+"/logs/explorer/query/sql", apiToken, bytes.NewReader([]byte(input.Config)))
+	return result, nil, err
+}
+
 // RegisterWriteTools registers logs write (mutation) tools with the MCP server.
 //
 // It is called only when write mode is enabled via CLOUDFLARE_MCP_ENABLE_WRITE.
@@ -438,4 +457,9 @@ func RegisterWriteTools(server *mcp.Server) {
 		Name:        "delete_account_log_dataset",
 		Description: "Delete a Logs Explorer dataset from a Cloudflare account by dataset ID.",
 	}, deleteAccountLogDataset)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "run_account_logs_sql_query",
+		Description: "Run a Logs Explorer SQL query for a Cloudflare account (POST). The config argument is a JSON object with the query and options.",
+	}, runAccountLogsSQL)
 }
