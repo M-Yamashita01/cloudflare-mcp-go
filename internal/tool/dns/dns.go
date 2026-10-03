@@ -133,6 +133,50 @@ func getAnalytics(ctx context.Context, _ *mcp.CallToolRequest, input GetAnalytic
 	return result, nil, nil
 }
 
+// GetAnalyticsByTimeInput holds parameters for retrieving DNS analytics grouped by time.
+type GetAnalyticsByTimeInput struct {
+	ZoneID    string `json:"zone_id" jsonschema:"required,The ID of the zone"`
+	Since     string `json:"since,omitempty" jsonschema:"Start date for the report in ISO 8601 format (e.g. 2026-05-01T00:00:00Z)"`
+	Until     string `json:"until,omitempty" jsonschema:"End date for the report in ISO 8601 format"`
+	TimeDelta string `json:"time_delta,omitempty" jsonschema:"Unit of time to group data by: all, auto, year, quarter, month, week, day, hour, dekaminute, minute"`
+}
+
+func getAnalyticsByTime(ctx context.Context, _ *mcp.CallToolRequest, input GetAnalyticsByTimeInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	url := cfapi.APIBase + "/zones/" + input.ZoneID + "/dns_analytics/report/bytime"
+	var params []string
+	if input.Since != "" {
+		params = append(params, fmt.Sprintf("since=%s", input.Since))
+	}
+	if input.Until != "" {
+		params = append(params, fmt.Sprintf("until=%s", input.Until))
+	}
+	if input.TimeDelta != "" {
+		params = append(params, fmt.Sprintf("time_delta=%s", input.TimeDelta))
+	}
+	if len(params) > 0 {
+		url += "?" + strings.Join(params, "&")
+	}
+
+	cfResp, err := cfapi.DoRequest(ctx, http.MethodGet, url, apiToken, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	if !cfResp.Success {
+		return cfapi.APIErrorResult(cfResp.Errors), nil, nil
+	}
+
+	result, err := cfapi.FormatResult(cfResp)
+	if err != nil {
+		return nil, nil, err
+	}
+	return result, nil, nil
+}
+
 // RegisterTools registers DNS management tools with the MCP server.
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
@@ -149,4 +193,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "get_dns_analytics",
 		Description: "Get DNS query analytics report for a Cloudflare zone. Returns query counts, response codes, and query type distributions. Useful for detecting DNS anomalies and attack patterns.",
 	}, getAnalytics)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_dns_analytics_bytime",
+		Description: "Get DNS query analytics for a Cloudflare zone grouped by time interval. Returns time-series data points (grouped by time_delta) for spotting trends and spikes.",
+	}, getAnalyticsByTime)
 }
