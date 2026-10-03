@@ -309,6 +309,22 @@ func deleteToken(ctx context.Context, _ *mcp.CallToolRequest, input DeleteTokenI
 	return result, nil, err
 }
 
+// RollTokenInput holds parameters for rolling an account API token's value.
+type RollTokenInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+	TokenID   string `json:"token_id"   jsonschema:"required,The ID of the API token to roll"`
+}
+
+func rollToken(ctx context.Context, _ *mcp.CallToolRequest, input RollTokenInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := sendWrite(ctx, http.MethodPut, cfapi.APIBase+"/accounts/"+input.AccountID+"/tokens/"+input.TokenID+"/value", apiToken, nil)
+	return result, nil, err
+}
+
 // RegisterWriteTools registers account write (mutation) tools with the MCP server.
 //
 // It is called only when write mode is enabled via CLOUDFLARE_MCP_ENABLE_WRITE.
@@ -387,4 +403,9 @@ func RegisterWriteTools(server *mcp.Server) {
 		Name:        "delete_account_token",
 		Description: "Delete an account-owned API token by token ID.",
 	}, deleteToken)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "roll_account_token",
+		Description: "Roll (regenerate) the value of an account-owned API token by token ID. Returns the new token value once.",
+	}, rollToken)
 }
