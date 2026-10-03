@@ -95,6 +95,27 @@ func startAccountScan(ctx context.Context, _ *mcp.CallToolRequest, input StartAc
 	return result, nil, err
 }
 
+// UpdatePartnerSettingsInput holds parameters for updating partner integration settings.
+type UpdatePartnerSettingsInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+	Partner   string `json:"partner"    jsonschema:"required,The partner identifier"`
+	Config    string `json:"config"     jsonschema:"required,JSON object with the partner integration settings"`
+}
+
+func updatePartnerSettings(ctx context.Context, _ *mcp.CallToolRequest, input UpdatePartnerSettingsInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+	if result := invalidJSON("config", input.Config); result != nil {
+		return result, nil, nil
+	}
+
+	url := cfapi.APIBase + "/accounts/" + input.AccountID + "/security-center/partners/" + input.Partner + "/settings"
+	result, err := sendWrite(ctx, http.MethodPost, url, apiToken, bytes.NewReader([]byte(input.Config)))
+	return result, nil, err
+}
+
 // RegisterWriteTools registers Security Center write (mutation) tools with the MCP server.
 //
 // It is called only when write mode is enabled via CLOUDFLARE_MCP_ENABLE_WRITE.
@@ -113,4 +134,9 @@ func RegisterWriteTools(server *mcp.Server) {
 		Name:        "start_account_scan",
 		Description: "Start an on-demand Security Center scan for a Cloudflare account.",
 	}, startAccountScan)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "update_partner_integration_settings",
+		Description: "Update the Security Center partner integration settings for a Cloudflare account and partner. The config argument is a JSON object.",
+	}, updatePartnerSettings)
 }
