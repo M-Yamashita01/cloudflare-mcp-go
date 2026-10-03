@@ -116,6 +116,26 @@ func updatePartnerSettings(ctx context.Context, _ *mcp.CallToolRequest, input Up
 	return result, nil, err
 }
 
+// UpdateAccountStateInput holds parameters for updating the account Security Center state.
+type UpdateAccountStateInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+	Config    string `json:"config"     jsonschema:"required,JSON object with the new Security Center state"`
+}
+
+func updateAccountState(ctx context.Context, _ *mcp.CallToolRequest, input UpdateAccountStateInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+	if result := invalidJSON("config", input.Config); result != nil {
+		return result, nil, nil
+	}
+
+	url := cfapi.APIBase + "/accounts/" + input.AccountID + "/security-center/state"
+	result, err := sendWrite(ctx, http.MethodPut, url, apiToken, bytes.NewReader([]byte(input.Config)))
+	return result, nil, err
+}
+
 // RegisterWriteTools registers Security Center write (mutation) tools with the MCP server.
 //
 // It is called only when write mode is enabled via CLOUDFLARE_MCP_ENABLE_WRITE.
@@ -139,4 +159,9 @@ func RegisterWriteTools(server *mcp.Server) {
 		Name:        "update_partner_integration_settings",
 		Description: "Update the Security Center partner integration settings for a Cloudflare account and partner. The config argument is a JSON object.",
 	}, updatePartnerSettings)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "update_account_security_center_state",
+		Description: "Update the Security Center state for a Cloudflare account. The config argument is a JSON object.",
+	}, updateAccountState)
 }
