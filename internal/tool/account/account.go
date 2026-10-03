@@ -56,10 +56,43 @@ func list(ctx context.Context, _ *mcp.CallToolRequest, input ListInput) (*mcp.Ca
 	return result, nil, nil
 }
 
+// doGet performs a GET against the standard Cloudflare REST API and formats the
+// response. It is shared by the account read tools.
+func doGet(ctx context.Context, url, apiToken string) (*mcp.CallToolResult, error) {
+	cfResp, err := cfapi.DoRequest(ctx, http.MethodGet, url, apiToken, nil)
+	if err != nil {
+		return nil, err
+	}
+	if !cfResp.Success {
+		return cfapi.APIErrorResult(cfResp.Errors), nil
+	}
+	return cfapi.FormatResult(cfResp)
+}
+
+// GetDetailsInput holds parameters for getting account details.
+type GetDetailsInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+}
+
+func getDetails(ctx context.Context, _ *mcp.CallToolRequest, input GetDetailsInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := doGet(ctx, cfapi.APIBase+"/accounts/"+input.AccountID, apiToken)
+	return result, nil, err
+}
+
 // RegisterTools registers account management tools with the MCP server.
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "list_accounts",
 		Description: "List Cloudflare accounts accessible with the current API token. Returns account details such as ID, name, and settings.",
 	}, list)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_account_details",
+		Description: "Get details of a specific Cloudflare account by ID (name, settings, created date).",
+	}, getDetails)
 }
