@@ -251,6 +251,21 @@ func listTokenPermissionGroups(ctx context.Context, _ *mcp.CallToolRequest, inpu
 	return result, nil, err
 }
 
+// VerifyTokenInput holds parameters for verifying an account API token.
+type VerifyTokenInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+}
+
+func verifyToken(ctx context.Context, _ *mcp.CallToolRequest, input VerifyTokenInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := doGet(ctx, cfapi.APIBase+"/accounts/"+input.AccountID+"/tokens/verify", apiToken)
+	return result, nil, err
+}
+
 // RegisterTools registers account management tools with the MCP server.
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
@@ -307,4 +322,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "list_token_permission_groups",
 		Description: "List the permission groups available for account-owned API tokens. Useful for building token policies.",
 	}, listTokenPermissionGroups)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "verify_account_token",
+		Description: "Verify the account-owned API token used for the request (checks it is valid and active) for a Cloudflare account.",
+	}, verifyToken)
 }
