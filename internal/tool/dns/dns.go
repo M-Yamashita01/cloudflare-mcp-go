@@ -205,6 +205,33 @@ func export(ctx context.Context, _ *mcp.CallToolRequest, input ExportInput) (*mc
 	}, nil, nil
 }
 
+// GetUsageInput holds parameters for retrieving DNS record usage.
+type GetUsageInput struct {
+	ZoneID string `json:"zone_id" jsonschema:"required,The ID of the zone"`
+}
+
+func getUsage(ctx context.Context, _ *mcp.CallToolRequest, input GetUsageInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	url := cfapi.APIBase + "/zones/" + input.ZoneID + "/dns_records/usage"
+	cfResp, err := cfapi.DoRequest(ctx, http.MethodGet, url, apiToken, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	if !cfResp.Success {
+		return cfapi.APIErrorResult(cfResp.Errors), nil, nil
+	}
+
+	result, err := cfapi.FormatResult(cfResp)
+	if err != nil {
+		return nil, nil, err
+	}
+	return result, nil, nil
+}
+
 // RegisterTools registers DNS management tools with the MCP server.
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
@@ -231,4 +258,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "export_dns_records",
 		Description: "Export all DNS records for a Cloudflare zone as a BIND zone file. Returns the raw BIND-format text.",
 	}, export)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_dns_record_usage",
+		Description: "Get DNS record usage for a Cloudflare zone (counts toward plan limits). Returns current and allowed record counts.",
+	}, getUsage)
 }
