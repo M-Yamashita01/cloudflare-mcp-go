@@ -65,6 +65,34 @@ func list(ctx context.Context, _ *mcp.CallToolRequest, input ListInput) (*mcp.Ca
 	return result, nil, nil
 }
 
+// GetInput holds parameters for retrieving a single DNS record.
+type GetInput struct {
+	ZoneID   string `json:"zone_id"   jsonschema:"required,The ID of the zone"`
+	RecordID string `json:"record_id" jsonschema:"required,The ID of the DNS record to retrieve"`
+}
+
+func get(ctx context.Context, _ *mcp.CallToolRequest, input GetInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	url := cfapi.APIBase + "/zones/" + input.ZoneID + "/dns_records/" + input.RecordID
+	cfResp, err := cfapi.DoRequest(ctx, http.MethodGet, url, apiToken, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	if !cfResp.Success {
+		return cfapi.APIErrorResult(cfResp.Errors), nil, nil
+	}
+
+	result, err := cfapi.FormatResult(cfResp)
+	if err != nil {
+		return nil, nil, err
+	}
+	return result, nil, nil
+}
+
 // GetAnalyticsInput holds parameters for retrieving DNS analytics.
 type GetAnalyticsInput struct {
 	ZoneID string `json:"zone_id" jsonschema:"required,The ID of the zone"`
@@ -111,6 +139,11 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "list_dns_records",
 		Description: "List DNS records for a Cloudflare zone. Returns record details such as ID, type, name, content, TTL, and proxy status.",
 	}, list)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_dns_record",
+		Description: "Get a single DNS record in a Cloudflare zone by record ID. Returns the record's full detail (type, name, content, TTL, proxy status, comment).",
+	}, get)
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "get_dns_analytics",
