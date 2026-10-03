@@ -74,6 +74,21 @@ func updateAccount(ctx context.Context, _ *mcp.CallToolRequest, input UpdateAcco
 	return result, nil, err
 }
 
+// DeleteAccountInput holds parameters for deleting an account.
+type DeleteAccountInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account to delete"`
+}
+
+func deleteAccount(ctx context.Context, _ *mcp.CallToolRequest, input DeleteAccountInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := sendWrite(ctx, http.MethodDelete, cfapi.APIBase+"/accounts/"+input.AccountID, apiToken, nil)
+	return result, nil, err
+}
+
 // RegisterWriteTools registers account write (mutation) tools with the MCP server.
 //
 // It is called only when write mode is enabled via CLOUDFLARE_MCP_ENABLE_WRITE.
@@ -87,4 +102,9 @@ func RegisterWriteTools(server *mcp.Server) {
 		Name:        "update_account",
 		Description: "Update a Cloudflare account by ID. The config argument is a JSON object of fields to change (name, settings).",
 	}, updateAccount)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "delete_account",
+		Description: "Delete a Cloudflare account by ID. This is destructive and only works for tenant/reseller sub-accounts.",
+	}, deleteAccount)
 }
