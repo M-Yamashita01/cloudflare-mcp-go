@@ -125,6 +125,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 | `preview_account_logpush_transformer` | Preview an account Logpush transformer (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `update_account_logpush_transformer` | Update an account Logpush transformer (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `delete_account_logpush_transformer` | Delete an account Logpush transformer (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
+| `validate_account_logpush_destination` | Validate an account Logpush destination (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 
 ### Security Center
 
