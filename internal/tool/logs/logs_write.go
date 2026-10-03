@@ -188,6 +188,22 @@ func updateAccountLogpushTransformer(ctx context.Context, _ *mcp.CallToolRequest
 	return result, nil, err
 }
 
+// DeleteAccountLogpushTransformerInput holds parameters for deleting a Logpush transformer in an account.
+type DeleteAccountLogpushTransformerInput struct {
+	AccountID     string `json:"account_id"     jsonschema:"required,The ID of the Cloudflare account"`
+	TransformerID string `json:"transformer_id" jsonschema:"required,The ID of the Logpush transformer to delete"`
+}
+
+func deleteAccountLogpushTransformer(ctx context.Context, _ *mcp.CallToolRequest, input DeleteAccountLogpushTransformerInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := sendWrite(ctx, http.MethodDelete, cfapi.APIBase+"/accounts/"+input.AccountID+"/logpush/transformers/"+input.TransformerID, apiToken, nil)
+	return result, nil, err
+}
+
 // RegisterWriteTools registers logs write (mutation) tools with the MCP server.
 //
 // It is called only when write mode is enabled via CLOUDFLARE_MCP_ENABLE_WRITE.
@@ -231,4 +247,9 @@ func RegisterWriteTools(server *mcp.Server) {
 		Name:        "update_account_logpush_transformer",
 		Description: "Update a Logpush transformer in a Cloudflare account by transformer ID. The config argument is a JSON object of fields to change.",
 	}, updateAccountLogpushTransformer)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "delete_account_logpush_transformer",
+		Description: "Delete a Logpush transformer from a Cloudflare account by transformer ID.",
+	}, deleteAccountLogpushTransformer)
 }
