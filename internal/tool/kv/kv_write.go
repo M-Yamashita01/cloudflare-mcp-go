@@ -210,6 +210,24 @@ func bulkWrite(ctx context.Context, _ *mcp.CallToolRequest, input BulkWriteInput
 	return result, nil, err
 }
 
+// BulkDeleteInput holds parameters for deleting multiple KV pairs (DELETE bulk).
+type BulkDeleteInput struct {
+	AccountID   string `json:"account_id"   jsonschema:"required,The ID of the Cloudflare account"`
+	NamespaceID string `json:"namespace_id" jsonschema:"required,The ID of the KV namespace"`
+	Keys        string `json:"keys"         jsonschema:"required,JSON array of key names to delete"`
+}
+
+func bulkDelete(ctx context.Context, _ *mcp.CallToolRequest, input BulkDeleteInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	reqURL := cfapi.APIBase + "/accounts/" + input.AccountID + "/storage/kv/namespaces/" + input.NamespaceID + "/bulk"
+	result, err := bulkKVRequest(ctx, http.MethodDelete, reqURL, apiToken, input.Keys)
+	return result, nil, err
+}
+
 // RegisterWriteTools registers KV write (mutation) tools with the MCP server.
 //
 // It is called only when write mode is enabled via CLOUDFLARE_MCP_ENABLE_WRITE.
@@ -243,4 +261,9 @@ func RegisterWriteTools(server *mcp.Server) {
 		Name:        "write_kv_pairs_bulk",
 		Description: "Write multiple key-value pairs to a Workers KV namespace at once (PUT bulk). The pairs argument is a JSON array of pair objects (key, value, optional expiration/metadata/base64).",
 	}, bulkWrite)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "delete_kv_pairs_bulk",
+		Description: "Delete multiple key-value pairs from a Workers KV namespace at once (DELETE bulk). The keys argument is a JSON array of key names.",
+	}, bulkDelete)
 }

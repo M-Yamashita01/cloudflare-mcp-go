@@ -138,3 +138,19 @@ func Test_bulkWrite_returns_error_when_pairs_is_invalid_json(t *testing.T) {
 		t.Error("got IsError = false, want true")
 	}
 }
+
+func Test_bulkDelete_returns_error_when_token_is_not_set(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := bulkDelete(context.Background(), &mcp.CallToolRequest{}, BulkDeleteInput{AccountID: "acc123", NamespaceID: "ns123", Keys: `["k1","k2"]`})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}
