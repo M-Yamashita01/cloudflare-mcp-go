@@ -191,6 +191,22 @@ func getSubscription(ctx context.Context, _ *mcp.CallToolRequest, input GetSubsc
 	return result, nil, err
 }
 
+// GetCancelReasonInput holds parameters for getting a subscription cancel reason.
+type GetCancelReasonInput struct {
+	AccountID      string `json:"account_id"      jsonschema:"required,The ID of the Cloudflare account"`
+	SubscriptionID string `json:"subscription_id" jsonschema:"required,The identifier of the subscription"`
+}
+
+func getCancelReason(ctx context.Context, _ *mcp.CallToolRequest, input GetCancelReasonInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := doGet(ctx, cfapi.APIBase+"/accounts/"+input.AccountID+"/subscriptions/"+input.SubscriptionID+"/cancel-reason", apiToken)
+	return result, nil, err
+}
+
 // RegisterTools registers account management tools with the MCP server.
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
@@ -232,4 +248,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "get_account_subscription",
 		Description: "Get a specific Cloudflare account subscription by its identifier (product, state, price, frequency).",
 	}, getSubscription)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_subscription_cancel_reason",
+		Description: "Get the cancellation reason recorded for a Cloudflare account subscription.",
+	}, getCancelReason)
 }
