@@ -49,10 +49,10 @@ func main() {
 
 	// Write (mutation) tools are registered only when enabled via
 	// CLOUDFLARE_MCP_ENABLE_WRITE=true, so they stay out of tools/list by
-	// default. No write tools exist yet; they will be wired here
-	// (e.g. dns.RegisterWriteTools(server)). See issue #107.
+	// default. See issue #107 for the gate and #109 for the DNS write tools.
 	if writeEnabled {
 		log.Println("Write tools enabled via " + cfapi.EnableWriteEnv)
+		dns.RegisterWriteTools(server)
 	}
 
 	log.Println("Starting Cloudflare MCP server (stdio)...")

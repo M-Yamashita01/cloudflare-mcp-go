@@ -167,6 +167,12 @@ if warn != "" {
 }
 // read-only tools always registered...
 if writeEnabled {
-    // dns.RegisterWriteTools(server) // added by follow-up work
+    dns.RegisterWriteTools(server)
 }
 ```
+
+Each domain exposes its write tools through a separate `RegisterWriteTools`
+function (distinct from the always-on `RegisterTools`). The DNS package was the
+first to add one, with `create_dns_record`, `update_dns_record`, and
+`delete_dns_record`. Later domains follow the same pattern and are wired into
+the same `if writeEnabled` block.
