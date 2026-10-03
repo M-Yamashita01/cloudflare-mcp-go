@@ -144,6 +144,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 | `check_logpush_destination_exists` | Check a zone Logpush destination exists (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `validate_logpush_origin` | Validate zone Logpush origin options (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `update_log_retention_flag` | Enable/disable zone log retention (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
+| `create_log_dataset` | Create a zone Logs Explorer dataset (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 
 ### Security Center
 

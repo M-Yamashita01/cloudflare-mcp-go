@@ -560,6 +560,25 @@ func updateRetentionFlag(ctx context.Context, _ *mcp.CallToolRequest, input Upda
 	return result, nil, err
 }
 
+// CreateLogDatasetInput holds parameters for creating a Logs Explorer dataset in a zone.
+type CreateLogDatasetInput struct {
+	ZoneID string `json:"zone_id" jsonschema:"required,The ID of the zone"`
+	Config string `json:"config"  jsonschema:"required,JSON object describing the dataset"`
+}
+
+func createLogDataset(ctx context.Context, _ *mcp.CallToolRequest, input CreateLogDatasetInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+	if result := invalidJSON("config", input.Config); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := sendWrite(ctx, http.MethodPost, cfapi.APIBase+"/zones/"+input.ZoneID+"/logs/explorer/datasets", apiToken, bytes.NewReader([]byte(input.Config)))
+	return result, nil, err
+}
+
 // RegisterWriteTools registers logs write (mutation) tools with the MCP server.
 //
 // It is called only when write mode is enabled via CLOUDFLARE_MCP_ENABLE_WRITE.
@@ -703,4 +722,9 @@ func RegisterWriteTools(server *mcp.Server) {
 		Name:        "update_log_retention_flag",
 		Description: "Enable or disable Logpull log retention for a Cloudflare zone by setting the retention flag.",
 	}, updateRetentionFlag)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "create_log_dataset",
+		Description: "Create a Logs Explorer dataset for a Cloudflare zone. The config argument is a JSON object describing the dataset.",
+	}, createLogDataset)
 }
