@@ -147,6 +147,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 | `create_log_dataset` | Create a zone Logs Explorer dataset (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `update_log_dataset` | Update a zone Logs Explorer dataset (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `delete_log_dataset` | Delete a zone Logs Explorer dataset (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
+| `run_logs_sql_query` | Run a zone Logs Explorer SQL query (POST) (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 
 ### Security Center
 
