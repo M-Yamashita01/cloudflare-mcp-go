@@ -224,6 +224,46 @@ func overwrite(ctx context.Context, _ *mcp.CallToolRequest, input OverwriteInput
 	return result, nil, nil
 }
 
+// BatchInput holds parameters for a batch DNS record operation.
+//
+// The Cloudflare batch endpoint accepts an object with optional "deletes",
+// "patches", "posts", and "puts" arrays applied atomically. The caller provides
+// that object as a JSON string, which is validated before being sent.
+type BatchInput struct {
+	ZoneID     string `json:"zone_id"    jsonschema:"required,The ID of the zone"`
+	Operations string `json:"operations" jsonschema:"required,JSON object with optional deletes/patches/posts/puts arrays (applied atomically)"`
+}
+
+func batch(ctx context.Context, _ *mcp.CallToolRequest, input BatchInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	var obj map[string]json.RawMessage
+	if err := json.Unmarshal([]byte(input.Operations), &obj); err != nil {
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{&mcp.TextContent{Text: "Error: operations must be a JSON object: " + err.Error()}},
+			IsError: true,
+		}, nil, nil
+	}
+
+	url := cfapi.APIBase + "/zones/" + input.ZoneID + "/dns_records/batch"
+	cfResp, err := cfapi.DoRequest(ctx, http.MethodPost, url, apiToken, bytes.NewReader([]byte(input.Operations)))
+	if err != nil {
+		return nil, nil, err
+	}
+	if !cfResp.Success {
+		return cfapi.APIErrorResult(cfResp.Errors), nil, nil
+	}
+
+	result, err := cfapi.FormatResult(cfResp)
+	if err != nil {
+		return nil, nil, err
+	}
+	return result, nil, nil
+}
+
 // RegisterWriteTools registers DNS write (mutation) tools with the MCP server.
 //
 // It is called only when write mode is enabled via CLOUDFLARE_MCP_ENABLE_WRITE,
@@ -248,4 +288,9 @@ func RegisterWriteTools(server *mcp.Server) {
 		Name:        "overwrite_dns_record",
 		Description: "Overwrite (fully replace) an existing DNS record by ID via PUT. Requires type, name, and content; any field not provided reverts to its default.",
 	}, overwrite)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "batch_dns_records",
+		Description: "Apply a batch of DNS record changes atomically. The operations argument is a JSON object with optional deletes, patches, posts, and puts arrays.",
+	}, batch)
 }

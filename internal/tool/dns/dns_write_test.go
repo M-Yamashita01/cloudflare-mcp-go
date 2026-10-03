@@ -109,6 +109,38 @@ func Test_overwrite_returns_error_when_token_is_not_set(t *testing.T) {
 	}
 }
 
+func Test_batch_returns_error_when_token_is_not_set(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := batch(context.Background(), &mcp.CallToolRequest{}, BatchInput{ZoneID: "abc123", Operations: `{"deletes":[]}`})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}
+
+func Test_batch_returns_error_when_operations_is_invalid_json(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "token")
+
+	// Act
+	result, _, err := batch(context.Background(), &mcp.CallToolRequest{}, BatchInput{ZoneID: "abc123", Operations: "not-json"})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}
+
 func Test_DeleteInput_has_zero_value_defaults(t *testing.T) {
 	// Arrange & Act
 	input := DeleteInput{}
