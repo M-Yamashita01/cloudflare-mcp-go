@@ -193,6 +193,24 @@ func getNamespace(ctx context.Context, _ *mcp.CallToolRequest, input GetNamespac
 	return result, nil, nil
 }
 
+// BulkGetInput holds parameters for getting multiple KV pairs at once.
+type BulkGetInput struct {
+	AccountID   string `json:"account_id"   jsonschema:"required,The ID of the Cloudflare account"`
+	NamespaceID string `json:"namespace_id" jsonschema:"required,The ID of the KV namespace"`
+	Keys        string `json:"keys"         jsonschema:"required,JSON object with a keys array, e.g. {\"keys\":[\"k1\",\"k2\"]}"`
+}
+
+func bulkGet(ctx context.Context, _ *mcp.CallToolRequest, input BulkGetInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	reqURL := cfapi.APIBase + "/accounts/" + input.AccountID + "/storage/kv/namespaces/" + input.NamespaceID + "/bulk/get"
+	result, err := bulkKVRequest(ctx, http.MethodPost, reqURL, apiToken, input.Keys)
+	return result, nil, err
+}
+
 // RegisterTools registers KV management tools with the MCP server.
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
@@ -219,4 +237,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "get_kv_namespace",
 		Description: "Get a Workers KV namespace by ID. Returns the namespace details (ID, title, supports URL encoding).",
 	}, getNamespace)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_kv_pairs_bulk",
+		Description: "Get multiple key-value pairs from a Workers KV namespace at once. The keys argument is a JSON object with a keys array. Read-only (no mutation) despite using POST.",
+	}, bulkGet)
 }
