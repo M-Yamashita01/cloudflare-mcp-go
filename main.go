@@ -58,6 +58,7 @@ func main() {
 		security.RegisterWriteTools(server)
 		logs.RegisterWriteTools(server)
 		account.RegisterWriteTools(server)
+		intel.RegisterWriteTools(server)
 	}
 
 	log.Println("Starting Cloudflare MCP server (stdio)...")
