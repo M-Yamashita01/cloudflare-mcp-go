@@ -90,3 +90,19 @@ func Test_CreateNamespaceInput_has_zero_value_defaults(t *testing.T) {
 		t.Error("got non-zero defaults, want zero values for CreateNamespaceInput")
 	}
 }
+
+func Test_renameNamespace_returns_error_when_token_is_not_set(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := renameNamespace(context.Background(), &mcp.CallToolRequest{}, RenameNamespaceInput{AccountID: "acc123", NamespaceID: "ns123", Title: "new"})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}

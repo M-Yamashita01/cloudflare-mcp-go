@@ -140,6 +140,40 @@ func deleteNamespace(ctx context.Context, _ *mcp.CallToolRequest, input DeleteNa
 	return result, nil, nil
 }
 
+// RenameNamespaceInput holds parameters for renaming a KV namespace.
+type RenameNamespaceInput struct {
+	AccountID   string `json:"account_id"   jsonschema:"required,The ID of the Cloudflare account"`
+	NamespaceID string `json:"namespace_id" jsonschema:"required,The ID of the KV namespace to rename"`
+	Title       string `json:"title"        jsonschema:"required,The new title for the namespace"`
+}
+
+func renameNamespace(ctx context.Context, _ *mcp.CallToolRequest, input RenameNamespaceInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	payload, err := json.Marshal(map[string]any{"title": input.Title})
+	if err != nil {
+		return nil, nil, fmt.Errorf("marshaling request body: %w", err)
+	}
+
+	reqURL := cfapi.APIBase + "/accounts/" + input.AccountID + "/storage/kv/namespaces/" + input.NamespaceID
+	cfResp, err := cfapi.DoRequest(ctx, http.MethodPut, reqURL, apiToken, bytes.NewReader(payload))
+	if err != nil {
+		return nil, nil, err
+	}
+	if !cfResp.Success {
+		return cfapi.APIErrorResult(cfResp.Errors), nil, nil
+	}
+
+	result, err := cfapi.FormatResult(cfResp)
+	if err != nil {
+		return nil, nil, err
+	}
+	return result, nil, nil
+}
+
 // RegisterWriteTools registers KV write (mutation) tools with the MCP server.
 //
 // It is called only when write mode is enabled via CLOUDFLARE_MCP_ENABLE_WRITE.
@@ -163,4 +197,9 @@ func RegisterWriteTools(server *mcp.Server) {
 		Name:        "delete_kv_namespace",
 		Description: "Delete a Workers KV namespace from a Cloudflare account by namespace ID.",
 	}, deleteNamespace)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "rename_kv_namespace",
+		Description: "Rename a Workers KV namespace (change its title) by namespace ID.",
+	}, renameNamespace)
 }
