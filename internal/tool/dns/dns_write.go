@@ -385,6 +385,44 @@ func scanTrigger(ctx context.Context, _ *mcp.CallToolRequest, input ScanTriggerI
 	return result, nil, nil
 }
 
+// ReviewScannedInput holds parameters for reviewing scanned DNS records.
+//
+// The review body (which scanned records to accept/reject) is a rich structure,
+// so it is passed as a JSON string and validated before being sent.
+type ReviewScannedInput struct {
+	ZoneID   string `json:"zone_id"  jsonschema:"required,The ID of the zone"`
+	Decision string `json:"decision" jsonschema:"required,JSON body describing which scanned records to accept or reject"`
+}
+
+func reviewScanned(ctx context.Context, _ *mcp.CallToolRequest, input ReviewScannedInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	if !json.Valid([]byte(input.Decision)) {
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{&mcp.TextContent{Text: "Error: decision must be valid JSON"}},
+			IsError: true,
+		}, nil, nil
+	}
+
+	url := cfapi.APIBase + "/zones/" + input.ZoneID + "/dns_records/scan/review"
+	cfResp, err := cfapi.DoRequest(ctx, http.MethodPost, url, apiToken, bytes.NewReader([]byte(input.Decision)))
+	if err != nil {
+		return nil, nil, err
+	}
+	if !cfResp.Success {
+		return cfapi.APIErrorResult(cfResp.Errors), nil, nil
+	}
+
+	result, err := cfapi.FormatResult(cfResp)
+	if err != nil {
+		return nil, nil, err
+	}
+	return result, nil, nil
+}
+
 // RegisterWriteTools registers DNS write (mutation) tools with the MCP server.
 //
 // It is called only when write mode is enabled via CLOUDFLARE_MCP_ENABLE_WRITE,
@@ -429,4 +467,9 @@ func RegisterWriteTools(server *mcp.Server) {
 		Name:        "trigger_dns_record_scan",
 		Description: "Trigger an asynchronous DNS record scan for a Cloudflare zone. Use list_scanned_dns_records to review results and review_scanned_dns_records to accept them.",
 	}, scanTrigger)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "review_scanned_dns_records",
+		Description: "Accept or reject DNS records found by a scan. The decision argument is a JSON body describing which scanned records to apply.",
+	}, reviewScanned)
 }

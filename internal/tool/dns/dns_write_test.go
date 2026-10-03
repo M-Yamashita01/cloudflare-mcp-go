@@ -109,6 +109,38 @@ func Test_overwrite_returns_error_when_token_is_not_set(t *testing.T) {
 	}
 }
 
+func Test_reviewScanned_returns_error_when_token_is_not_set(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := reviewScanned(context.Background(), &mcp.CallToolRequest{}, ReviewScannedInput{ZoneID: "abc123", Decision: "{}"})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}
+
+func Test_reviewScanned_returns_error_when_decision_is_invalid_json(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "token")
+
+	// Act
+	result, _, err := reviewScanned(context.Background(), &mcp.CallToolRequest{}, ReviewScannedInput{ZoneID: "abc123", Decision: "oops"})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}
+
 func Test_scanTrigger_returns_error_when_token_is_not_set(t *testing.T) {
 	// Arrange
 	t.Setenv("CLOUDFLARE_API_TOKEN", "")
