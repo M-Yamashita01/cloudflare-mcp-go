@@ -144,6 +144,22 @@ func listRoles(ctx context.Context, _ *mcp.CallToolRequest, input ListRolesInput
 	return result, nil, err
 }
 
+// GetRoleInput holds parameters for getting an account role.
+type GetRoleInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+	RoleID    string `json:"role_id"    jsonschema:"required,The ID of the role"`
+}
+
+func getRole(ctx context.Context, _ *mcp.CallToolRequest, input GetRoleInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := doGet(ctx, cfapi.APIBase+"/accounts/"+input.AccountID+"/roles/"+input.RoleID, apiToken)
+	return result, nil, err
+}
+
 // RegisterTools registers account management tools with the MCP server.
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
@@ -170,4 +186,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "list_account_roles",
 		Description: "List the roles available in a Cloudflare account. Returns role IDs, names, descriptions, and permissions.",
 	}, listRoles)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_account_role",
+		Description: "Get details of a specific Cloudflare account role by role ID (name, description, permissions).",
+	}, getRole)
 }
