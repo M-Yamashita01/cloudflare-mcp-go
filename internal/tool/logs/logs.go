@@ -334,6 +334,21 @@ func queryLogsSQL(ctx context.Context, _ *mcp.CallToolRequest, input QueryLogsSQ
 	return result, nil, err
 }
 
+// ListAccountLogpushJobsInput holds parameters for listing Logpush jobs in an account.
+type ListAccountLogpushJobsInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+}
+
+func listAccountLogpushJobs(ctx context.Context, _ *mcp.CallToolRequest, input ListAccountLogpushJobsInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := doGet(ctx, cfapi.APIBase+"/accounts/"+input.AccountID+"/logpush/jobs", apiToken)
+	return result, nil, err
+}
+
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "get_log_by_rayid",
@@ -399,4 +414,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "query_logs_sql",
 		Description: "Run a Logs Explorer SQL query for a Cloudflare zone (GET). Returns the query results.",
 	}, queryLogsSQL)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "list_account_logpush_jobs",
+		Description: "List Logpush jobs for a Cloudflare account. Returns job details including dataset, destination, and enabled status.",
+	}, listAccountLogpushJobs)
 }
