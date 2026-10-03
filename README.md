@@ -186,6 +186,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 | `verify_account_token` | Verify the account API token is valid and active. |
 | `get_account_token` | Get an account API token by ID (name, policies, status). |
 | `create_account` | Create a new account (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
+| `update_account` | Update an account (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `list_audit_logs` | Account audit log entries (who changed what and when). |
 | `list_user_audit_logs` | User-scoped audit log entries. |
 | `list_kv_namespaces` | Workers KV namespaces in an account. |
