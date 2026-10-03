@@ -185,6 +185,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 | `get_sinkhole` | Get a DNS sinkhole by ID. |
 | `list_sinkhole_ingresses` | List ingress rules for a sinkhole. |
 | `dismiss_security_center_insight` | Dismiss/archive a Security Center insight (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
+| `create_indicator_feed` | Create an indicator feed (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 
 ### Account & audit
 

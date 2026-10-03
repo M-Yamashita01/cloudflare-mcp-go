@@ -61,6 +61,25 @@ func dismissInsight(ctx context.Context, _ *mcp.CallToolRequest, input DismissIn
 	return result, nil, err
 }
 
+// CreateIndicatorFeedInput holds parameters for creating an indicator feed.
+type CreateIndicatorFeedInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+	Config    string `json:"config"     jsonschema:"required,JSON object describing the feed (name, description, is_attributable, etc.)"`
+}
+
+func createIndicatorFeed(ctx context.Context, _ *mcp.CallToolRequest, input CreateIndicatorFeedInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+	if result := invalidJSON("config", input.Config); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := sendWrite(ctx, http.MethodPost, cfapi.APIBase+"/accounts/"+input.AccountID+"/intel/indicator-feeds", apiToken, bytes.NewReader([]byte(input.Config)))
+	return result, nil, err
+}
+
 // RegisterWriteTools registers intel write (mutation) tools with the MCP server.
 //
 // It is called only when write mode is enabled via CLOUDFLARE_MCP_ENABLE_WRITE.
@@ -69,4 +88,9 @@ func RegisterWriteTools(server *mcp.Server) {
 		Name:        "dismiss_security_center_insight",
 		Description: "Dismiss (archive) or un-dismiss a Security Center attack-surface insight by issue ID. Set dismissed to true to archive.",
 	}, dismissInsight)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "create_indicator_feed",
+		Description: "Create a new threat-intelligence indicator feed for a Cloudflare account. The config argument is a JSON object (name, description, etc.).",
+	}, createIndicatorFeed)
 }
