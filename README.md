@@ -93,6 +93,10 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 | `list_kv_keys` | List keys in a KV namespace (prefix filter, cursor pagination). |
 | `get_kv_value` | Read the raw stored value for a key in a KV namespace. |
 | `get_kv_metadata` | Read the metadata associated with a key in a KV namespace. |
+| `write_kv_pair` | Write a key-value pair, optional TTL (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
+| `delete_kv_pair` | Delete a key-value pair by key (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
+| `create_kv_namespace` | Create a KV namespace (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
+| `delete_kv_namespace` | Delete a KV namespace by ID (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 
 ## Usage examples
 
