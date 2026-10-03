@@ -25,7 +25,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 
 ## Tools
 
-64 read-only tools grouped by domain, plus optional write tools (marked below) that are registered only when `CLOUDFLARE_MCP_ENABLE_WRITE=true`.
+65 read-only tools grouped by domain, plus optional write tools (marked below) that are registered only when `CLOUDFLARE_MCP_ENABLE_WRITE=true`.
 
 ### Zones & DNS
 
@@ -112,6 +112,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 | `get_cmb_config` | Get the Customer Metadata Boundary (CMB) config for an account. |
 | `list_account_log_datasets` | List Logs Explorer datasets for an account. |
 | `list_available_account_log_datasets` | List available Logs Explorer datasets for an account. |
+| `get_account_log_dataset` | Get a Logs Explorer dataset for an account by ID. |
 
 ### Security Center
 
