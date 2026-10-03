@@ -313,6 +313,33 @@ func listDNSSECZSK(ctx context.Context, _ *mcp.CallToolRequest, input ListDNSSEC
 	return result, nil, nil
 }
 
+// ListScannedInput holds parameters for listing scanned DNS records.
+type ListScannedInput struct {
+	ZoneID string `json:"zone_id" jsonschema:"required,The ID of the zone"`
+}
+
+func listScanned(ctx context.Context, _ *mcp.CallToolRequest, input ListScannedInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	url := cfapi.APIBase + "/zones/" + input.ZoneID + "/dns_records/scan/review"
+	cfResp, err := cfapi.DoRequest(ctx, http.MethodGet, url, apiToken, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	if !cfResp.Success {
+		return cfapi.APIErrorResult(cfResp.Errors), nil, nil
+	}
+
+	result, err := cfapi.FormatResult(cfResp)
+	if err != nil {
+		return nil, nil, err
+	}
+	return result, nil, nil
+}
+
 // RegisterTools registers DNS management tools with the MCP server.
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
@@ -359,4 +386,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "list_dnssec_zsk",
 		Description: "List DNSSEC Zone Signing Keys (ZSKs) for a Cloudflare zone (multi-signer DNSSEC). Returns the ZSK records.",
 	}, listDNSSECZSK)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "list_scanned_dns_records",
+		Description: "List DNS records discovered by a DNS record scan for a Cloudflare zone, pending review. Returns the scanned records.",
+	}, listScanned)
 }
