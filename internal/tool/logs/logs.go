@@ -602,6 +602,49 @@ func queryAccountLogsSQL(ctx context.Context, _ *mcp.CallToolRequest, input Quer
 	return result, nil, err
 }
 
+// ListAccountLogFilesInput holds parameters for listing stored account log files.
+type ListAccountLogFilesInput struct {
+	AccountID string `json:"account_id"      jsonschema:"required,The ID of the Cloudflare account"`
+	Start     string `json:"start,omitempty" jsonschema:"Start time (RFC3339 or Unix timestamp)"`
+	End       string `json:"end,omitempty"   jsonschema:"End time (RFC3339 or Unix timestamp)"`
+	Bucket    string `json:"bucket,omitempty" jsonschema:"Destination bucket/path to list log files from"`
+}
+
+func listAccountLogFiles(ctx context.Context, _ *mcp.CallToolRequest, input ListAccountLogFilesInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	reqURL := cfapi.APIBase + "/accounts/" + input.AccountID + "/logs/list"
+	var params []string
+	if input.Start != "" {
+		params = append(params, "start="+url.QueryEscape(input.Start))
+	}
+	if input.End != "" {
+		params = append(params, "end="+url.QueryEscape(input.End))
+	}
+	if input.Bucket != "" {
+		params = append(params, "bucket="+url.QueryEscape(input.Bucket))
+	}
+	if len(params) > 0 {
+		reqURL += "?" + strings.Join(params, "&")
+	}
+
+	body, err := doLogpullRequest(ctx, reqURL, apiToken)
+	if err != nil {
+		return nil, nil, err
+	}
+	if body == "" {
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{&mcp.TextContent{Text: "No log files found"}},
+		}, nil, nil
+	}
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{&mcp.TextContent{Text: body}},
+	}, nil, nil
+}
+
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "get_log_by_rayid",
@@ -747,4 +790,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "query_account_logs_sql",
 		Description: "Run a Logs Explorer SQL query for a Cloudflare account (GET). Returns the query results.",
 	}, queryAccountLogsSQL)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "list_account_log_files",
+		Description: "List stored log files for a Cloudflare account (Logpull/stored logs). Supports start, end, and bucket filters.",
+	}, listAccountLogFiles)
 }
