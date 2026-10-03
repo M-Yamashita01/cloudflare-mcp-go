@@ -79,6 +79,30 @@ func DoRequest(ctx context.Context, method, url, apiToken string, body io.Reader
 	return &cfResp, nil
 }
 
+// DoRawRequest executes an HTTP request against the Cloudflare API and returns
+// the raw response body and status code without JSON parsing. Use it for
+// endpoints that do not return the standard Response envelope (e.g. the Workers
+// KV value endpoint, which returns the stored value verbatim).
+func DoRawRequest(ctx context.Context, method, url, apiToken string, body io.Reader) ([]byte, int, error) {
+	httpReq, err := http.NewRequestWithContext(ctx, method, url, body)
+	if err != nil {
+		return nil, 0, fmt.Errorf("creating request: %w", err)
+	}
+	httpReq.Header.Set("Authorization", "Bearer "+apiToken)
+
+	resp, err := http.DefaultClient.Do(httpReq)
+	if err != nil {
+		return nil, 0, fmt.Errorf("calling Cloudflare API: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, resp.StatusCode, fmt.Errorf("reading response body: %w", err)
+	}
+	return respBody, resp.StatusCode, nil
+}
+
 // FormatResult pretty-prints the result field of a Response as a CallToolResult.
 func FormatResult(cfResp *Response) (*mcp.CallToolResult, error) {
 	formatted, err := json.MarshalIndent(cfResp.Result, "", "  ")
