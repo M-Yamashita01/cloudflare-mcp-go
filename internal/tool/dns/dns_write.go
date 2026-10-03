@@ -423,6 +423,45 @@ func reviewScanned(ctx context.Context, _ *mcp.CallToolRequest, input ReviewScan
 	return result, nil, nil
 }
 
+// UpdateSettingsInput holds parameters for updating a zone's DNS settings.
+//
+// DNS settings cover many optional fields, so they are passed as a JSON object
+// string and validated before being sent.
+type UpdateSettingsInput struct {
+	ZoneID   string `json:"zone_id"  jsonschema:"required,The ID of the zone"`
+	Settings string `json:"settings" jsonschema:"required,JSON object of DNS settings to update (e.g. foundation_dns, multi_provider, nameservers)"`
+}
+
+func updateSettings(ctx context.Context, _ *mcp.CallToolRequest, input UpdateSettingsInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	var obj map[string]json.RawMessage
+	if err := json.Unmarshal([]byte(input.Settings), &obj); err != nil {
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{&mcp.TextContent{Text: "Error: settings must be a JSON object: " + err.Error()}},
+			IsError: true,
+		}, nil, nil
+	}
+
+	url := cfapi.APIBase + "/zones/" + input.ZoneID + "/dns_settings"
+	cfResp, err := cfapi.DoRequest(ctx, http.MethodPatch, url, apiToken, bytes.NewReader([]byte(input.Settings)))
+	if err != nil {
+		return nil, nil, err
+	}
+	if !cfResp.Success {
+		return cfapi.APIErrorResult(cfResp.Errors), nil, nil
+	}
+
+	result, err := cfapi.FormatResult(cfResp)
+	if err != nil {
+		return nil, nil, err
+	}
+	return result, nil, nil
+}
+
 // RegisterWriteTools registers DNS write (mutation) tools with the MCP server.
 //
 // It is called only when write mode is enabled via CLOUDFLARE_MCP_ENABLE_WRITE,
@@ -472,4 +511,9 @@ func RegisterWriteTools(server *mcp.Server) {
 		Name:        "review_scanned_dns_records",
 		Description: "Accept or reject DNS records found by a scan. The decision argument is a JSON body describing which scanned records to apply.",
 	}, reviewScanned)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "update_dns_settings",
+		Description: "Update DNS settings for a Cloudflare zone (e.g. Foundation DNS, multi-provider, nameservers). The settings argument is a JSON object of fields to change.",
+	}, updateSettings)
 }

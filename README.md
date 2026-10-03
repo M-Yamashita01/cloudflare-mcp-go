@@ -54,6 +54,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 | `scan_dns_records` | Scan a zone for DNS records at common names (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `trigger_dns_record_scan` | Trigger an async DNS record scan (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `review_scanned_dns_records` | Accept/reject DNS records found by a scan (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
+| `update_dns_settings` | Update a zone's DNS settings (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 
 ### Firewall, WAF & rate limiting
 
