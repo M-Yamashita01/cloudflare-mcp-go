@@ -198,6 +198,22 @@ func updateSubscription(ctx context.Context, _ *mcp.CallToolRequest, input Updat
 	return result, nil, err
 }
 
+// DeleteSubscriptionInput holds parameters for deleting an account subscription.
+type DeleteSubscriptionInput struct {
+	AccountID      string `json:"account_id"      jsonschema:"required,The ID of the Cloudflare account"`
+	SubscriptionID string `json:"subscription_id" jsonschema:"required,The identifier of the subscription to delete"`
+}
+
+func deleteSubscription(ctx context.Context, _ *mcp.CallToolRequest, input DeleteSubscriptionInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := sendWrite(ctx, http.MethodDelete, cfapi.APIBase+"/accounts/"+input.AccountID+"/subscriptions/"+input.SubscriptionID, apiToken, nil)
+	return result, nil, err
+}
+
 // RegisterWriteTools registers account write (mutation) tools with the MCP server.
 //
 // It is called only when write mode is enabled via CLOUDFLARE_MCP_ENABLE_WRITE.
@@ -246,4 +262,9 @@ func RegisterWriteTools(server *mcp.Server) {
 		Name:        "update_account_subscription",
 		Description: "Update a Cloudflare account subscription by its identifier. The config argument is a JSON object of fields to change.",
 	}, updateSubscription)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "delete_account_subscription",
+		Description: "Delete a Cloudflare account subscription by its identifier.",
+	}, deleteSubscription)
 }
