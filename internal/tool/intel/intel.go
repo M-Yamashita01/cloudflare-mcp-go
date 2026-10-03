@@ -378,6 +378,21 @@ func listIndicatorFeeds(ctx context.Context, _ *mcp.CallToolRequest, input ListI
 	return result, nil, err
 }
 
+// ListFeedPermissionsInput holds parameters for listing indicator feed permissions.
+type ListFeedPermissionsInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+}
+
+func listFeedPermissions(ctx context.Context, _ *mcp.CallToolRequest, input ListFeedPermissionsInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := doGet(ctx, cfapi.APIBase+"/accounts/"+input.AccountID+"/intel/indicator-feeds/permissions/view", apiToken)
+	return result, nil, err
+}
+
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "get_ip_intel",
@@ -458,4 +473,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "list_indicator_feeds",
 		Description: "List the threat-intelligence indicator feeds owned by a Cloudflare account.",
 	}, listIndicatorFeeds)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "list_indicator_feed_permissions",
+		Description: "List the indicator feed permissions (feeds the account can view) for a Cloudflare account.",
+	}, listFeedPermissions)
 }
