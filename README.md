@@ -136,6 +136,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 | `run_account_logs_sql_query` | Run an account Logs Explorer SQL query (POST) (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `create_logpush_job` | Create a zone Logpush job (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `update_logpush_job` | Update a zone Logpush job (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
+| `delete_logpush_job` | Delete a zone Logpush job (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 
 ### Security Center
 
