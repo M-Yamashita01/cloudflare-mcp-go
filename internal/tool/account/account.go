@@ -236,6 +236,21 @@ func listTokens(ctx context.Context, _ *mcp.CallToolRequest, input ListTokensInp
 	return result, nil, err
 }
 
+// ListTokenPermissionGroupsInput holds parameters for listing token permission groups.
+type ListTokenPermissionGroupsInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+}
+
+func listTokenPermissionGroups(ctx context.Context, _ *mcp.CallToolRequest, input ListTokenPermissionGroupsInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := doGet(ctx, cfapi.APIBase+"/accounts/"+input.AccountID+"/tokens/permission_groups", apiToken)
+	return result, nil, err
+}
+
 // RegisterTools registers account management tools with the MCP server.
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
@@ -287,4 +302,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "list_account_tokens",
 		Description: "List the account-owned API tokens for a Cloudflare account. Returns token IDs, names, status, and policies.",
 	}, listTokens)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "list_token_permission_groups",
+		Description: "List the permission groups available for account-owned API tokens. Useful for building token policies.",
+	}, listTokenPermissionGroups)
 }
