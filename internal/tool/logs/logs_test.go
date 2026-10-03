@@ -365,3 +365,19 @@ func Test_getAccountLogpushTransformerContent_returns_error_when_token_is_not_se
 		t.Error("got IsError = false, want true")
 	}
 }
+
+func Test_listAccountLogpushTransformerVersions_returns_error_when_token_is_not_set(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := listAccountLogpushTransformerVersions(context.Background(), &mcp.CallToolRequest{}, ListAccountLogpushTransformerVersionsInput{AccountID: "acc123", TransformerID: "t1"})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}
