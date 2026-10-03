@@ -388,6 +388,26 @@ func createLogpushJob(ctx context.Context, _ *mcp.CallToolRequest, input CreateL
 	return result, nil, err
 }
 
+// UpdateLogpushJobInput holds parameters for updating a Logpush job in a zone.
+type UpdateLogpushJobInput struct {
+	ZoneID string `json:"zone_id" jsonschema:"required,The ID of the zone"`
+	JobID  string `json:"job_id"  jsonschema:"required,The ID of the Logpush job"`
+	Config string `json:"config"  jsonschema:"required,JSON object of Logpush job fields to update"`
+}
+
+func updateLogpushJob(ctx context.Context, _ *mcp.CallToolRequest, input UpdateLogpushJobInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+	if result := invalidJSON("config", input.Config); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := sendWrite(ctx, http.MethodPut, cfapi.APIBase+"/zones/"+input.ZoneID+"/logpush/jobs/"+input.JobID, apiToken, bytes.NewReader([]byte(input.Config)))
+	return result, nil, err
+}
+
 // RegisterWriteTools registers logs write (mutation) tools with the MCP server.
 //
 // It is called only when write mode is enabled via CLOUDFLARE_MCP_ENABLE_WRITE.
@@ -486,4 +506,9 @@ func RegisterWriteTools(server *mcp.Server) {
 		Name:        "create_logpush_job",
 		Description: "Create a Logpush job for a Cloudflare zone. The config argument is a JSON object (dataset, destination_conf, logpull_options, enabled, etc.).",
 	}, createLogpushJob)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "update_logpush_job",
+		Description: "Update a Logpush job in a Cloudflare zone by job ID. The config argument is a JSON object of fields to change.",
+	}, updateLogpushJob)
 }
