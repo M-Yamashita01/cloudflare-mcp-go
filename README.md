@@ -188,6 +188,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 | `rename_kv_namespace` | Rename a KV namespace (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `write_kv_pairs_bulk` | Write multiple KV pairs at once (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `delete_kv_pairs_bulk` | Delete multiple KV pairs at once, DELETE bulk (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
+| `delete_kv_pairs_bulk_post` | Delete multiple KV pairs at once, POST bulk/delete (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 
 ## Usage examples
 
