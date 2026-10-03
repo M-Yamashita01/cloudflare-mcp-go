@@ -295,6 +295,25 @@ func deleteCMBConfig(ctx context.Context, _ *mcp.CallToolRequest, input DeleteCM
 	return result, nil, err
 }
 
+// CreateAccountLogDatasetInput holds parameters for creating a Logs Explorer dataset in an account.
+type CreateAccountLogDatasetInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+	Config    string `json:"config"     jsonschema:"required,JSON object describing the dataset"`
+}
+
+func createAccountLogDataset(ctx context.Context, _ *mcp.CallToolRequest, input CreateAccountLogDatasetInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+	if result := invalidJSON("config", input.Config); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := sendWrite(ctx, http.MethodPost, cfapi.APIBase+"/accounts/"+input.AccountID+"/logs/explorer/datasets", apiToken, bytes.NewReader([]byte(input.Config)))
+	return result, nil, err
+}
+
 // RegisterWriteTools registers logs write (mutation) tools with the MCP server.
 //
 // It is called only when write mode is enabled via CLOUDFLARE_MCP_ENABLE_WRITE.
@@ -368,4 +387,9 @@ func RegisterWriteTools(server *mcp.Server) {
 		Name:        "delete_cmb_config",
 		Description: "Delete (reset) the Customer Metadata Boundary (CMB) config for a Cloudflare account.",
 	}, deleteCMBConfig)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "create_account_log_dataset",
+		Description: "Create a Logs Explorer dataset for a Cloudflare account. The config argument is a JSON object describing the dataset.",
+	}, createAccountLogDataset)
 }
