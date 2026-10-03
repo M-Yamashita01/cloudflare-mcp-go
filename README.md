@@ -146,6 +146,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 | `update_log_retention_flag` | Enable/disable zone log retention (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `create_log_dataset` | Create a zone Logs Explorer dataset (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `update_log_dataset` | Update a zone Logs Explorer dataset (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
+| `delete_log_dataset` | Delete a zone Logs Explorer dataset (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 
 ### Security Center
 

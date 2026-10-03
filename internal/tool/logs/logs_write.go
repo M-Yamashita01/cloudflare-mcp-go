@@ -599,6 +599,22 @@ func updateLogDataset(ctx context.Context, _ *mcp.CallToolRequest, input UpdateL
 	return result, nil, err
 }
 
+// DeleteLogDatasetInput holds parameters for deleting a Logs Explorer dataset in a zone.
+type DeleteLogDatasetInput struct {
+	ZoneID    string `json:"zone_id"    jsonschema:"required,The ID of the zone"`
+	DatasetID string `json:"dataset_id" jsonschema:"required,The ID of the Logs Explorer dataset to delete"`
+}
+
+func deleteLogDataset(ctx context.Context, _ *mcp.CallToolRequest, input DeleteLogDatasetInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := sendWrite(ctx, http.MethodDelete, cfapi.APIBase+"/zones/"+input.ZoneID+"/logs/explorer/datasets/"+input.DatasetID, apiToken, nil)
+	return result, nil, err
+}
+
 // RegisterWriteTools registers logs write (mutation) tools with the MCP server.
 //
 // It is called only when write mode is enabled via CLOUDFLARE_MCP_ENABLE_WRITE.
@@ -752,4 +768,9 @@ func RegisterWriteTools(server *mcp.Server) {
 		Name:        "update_log_dataset",
 		Description: "Update a Logs Explorer dataset in a Cloudflare zone by dataset ID. The config argument is a JSON object of fields to change.",
 	}, updateLogDataset)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "delete_log_dataset",
+		Description: "Delete a Logs Explorer dataset from a Cloudflare zone by dataset ID.",
+	}, deleteLogDataset)
 }
