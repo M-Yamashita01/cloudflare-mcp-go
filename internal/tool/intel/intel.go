@@ -465,6 +465,23 @@ func downloadIndicatorFeed(ctx context.Context, _ *mcp.CallToolRequest, input Do
 	}, nil, nil
 }
 
+// GetFeedUploadStatusInput holds parameters for getting an indicator feed upload status.
+type GetFeedUploadStatusInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+	FeedID    string `json:"feed_id"    jsonschema:"required,The ID of the indicator feed"`
+	UploadID  string `json:"upload_id"  jsonschema:"required,The ID of the feed upload"`
+}
+
+func getFeedUploadStatus(ctx context.Context, _ *mcp.CallToolRequest, input GetFeedUploadStatusInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := doGet(ctx, cfapi.APIBase+"/accounts/"+input.AccountID+"/intel/indicator-feeds/"+input.FeedID+"/uploads/"+input.UploadID, apiToken)
+	return result, nil, err
+}
+
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "get_ip_intel",
@@ -565,4 +582,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "download_indicator_feed_data",
 		Description: "Download the latest snapshot data of a threat-intelligence indicator feed by feed ID. Returns the raw feed body.",
 	}, downloadIndicatorFeed)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_indicator_feed_upload_status",
+		Description: "Get the status of a specific upload to a threat-intelligence indicator feed by feed ID and upload ID.",
+	}, getFeedUploadStatus)
 }
