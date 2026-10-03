@@ -1,0 +1,92 @@
+package kv
+
+import (
+	"context"
+	"testing"
+
+	"github.com/modelcontextprotocol/go-sdk/mcp"
+)
+
+func Test_writePair_returns_error_when_token_is_not_set(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := writePair(context.Background(), &mcp.CallToolRequest{}, WritePairInput{AccountID: "acc123", NamespaceID: "ns123", Key: "k", Value: "v"})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}
+
+func Test_deletePair_returns_error_when_token_is_not_set(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := deletePair(context.Background(), &mcp.CallToolRequest{}, DeletePairInput{AccountID: "acc123", NamespaceID: "ns123", Key: "k"})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}
+
+func Test_createNamespace_returns_error_when_token_is_not_set(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := createNamespace(context.Background(), &mcp.CallToolRequest{}, CreateNamespaceInput{AccountID: "acc123", Title: "my-ns"})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}
+
+func Test_deleteNamespace_returns_error_when_token_is_not_set(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := deleteNamespace(context.Background(), &mcp.CallToolRequest{}, DeleteNamespaceInput{AccountID: "acc123", NamespaceID: "ns123"})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}
+
+func Test_WritePairInput_has_zero_value_defaults(t *testing.T) {
+	// Arrange & Act
+	input := WritePairInput{}
+
+	// Assert
+	if input != (WritePairInput{}) {
+		t.Error("got non-zero defaults, want zero values for WritePairInput")
+	}
+}
+
+func Test_CreateNamespaceInput_has_zero_value_defaults(t *testing.T) {
+	// Arrange & Act
+	input := CreateNamespaceInput{}
+
+	// Assert
+	if input != (CreateNamespaceInput{}) {
+		t.Error("got non-zero defaults, want zero values for CreateNamespaceInput")
+	}
+}
