@@ -123,6 +123,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 | `validate_account_logpush_ownership` | Validate an account Logpush ownership challenge (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `create_account_logpush_transformer` | Create an account Logpush transformer (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `preview_account_logpush_transformer` | Preview an account Logpush transformer (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
+| `update_account_logpush_transformer` | Update an account Logpush transformer (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 
 ### Security Center
 
