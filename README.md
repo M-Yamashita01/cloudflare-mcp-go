@@ -171,6 +171,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 | `get_zone_issue_audit_log` | Audit log for a zone Security Center insight. |
 | `list_zone_partner_shadow_hosts` | Partner-discovered shadow hosts for a zone. |
 | `get_securitytxt` | Get a zone's security.txt configuration. |
+| `update_account_insight_classification` | Update an account insight classification (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `get_insight_counts` | Aggregated insight counts by severity, class, or type. |
 
 ### Threat intelligence
