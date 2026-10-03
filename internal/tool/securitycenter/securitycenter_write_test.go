@@ -134,3 +134,19 @@ func Test_updateAccountState_returns_error_when_config_is_invalid_json(t *testin
 		t.Error("got IsError = false, want true")
 	}
 }
+
+func Test_startZoneScan_returns_error_when_token_is_not_set(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := startZoneScan(context.Background(), &mcp.CallToolRequest{}, StartZoneScanInput{ZoneID: "zone123"})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}

@@ -136,6 +136,22 @@ func updateAccountState(ctx context.Context, _ *mcp.CallToolRequest, input Updat
 	return result, nil, err
 }
 
+// StartZoneScanInput holds parameters for starting an on-demand zone scan.
+type StartZoneScanInput struct {
+	ZoneID string `json:"zone_id" jsonschema:"required,The ID of the zone"`
+}
+
+func startZoneScan(ctx context.Context, _ *mcp.CallToolRequest, input StartZoneScanInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	url := cfapi.APIBase + "/zones/" + input.ZoneID + "/security-center/insights/scans"
+	result, err := sendWrite(ctx, http.MethodPost, url, apiToken, nil)
+	return result, nil, err
+}
+
 // RegisterWriteTools registers Security Center write (mutation) tools with the MCP server.
 //
 // It is called only when write mode is enabled via CLOUDFLARE_MCP_ENABLE_WRITE.
@@ -164,4 +180,9 @@ func RegisterWriteTools(server *mcp.Server) {
 		Name:        "update_account_security_center_state",
 		Description: "Update the Security Center state for a Cloudflare account. The config argument is a JSON object.",
 	}, updateAccountState)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "start_zone_scan",
+		Description: "Start an on-demand Security Center scan for a zone.",
+	}, startZoneScan)
 }
