@@ -493,6 +493,21 @@ func getAccountAuditLogs(ctx context.Context, _ *mcp.CallToolRequest, input GetA
 	return result, nil, err
 }
 
+// ListAuditLogProductCategoriesInput holds parameters for listing audit log product categories in an account.
+type ListAuditLogProductCategoriesInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+}
+
+func listAuditLogProductCategories(ctx context.Context, _ *mcp.CallToolRequest, input ListAuditLogProductCategoriesInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := doGet(ctx, cfapi.APIBase+"/accounts/"+input.AccountID+"/logs/audit/product_categories", apiToken)
+	return result, nil, err
+}
+
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "get_log_by_rayid",
@@ -603,4 +618,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "get_account_audit_logs_v2",
 		Description: "Get account audit logs (Version 2) for a Cloudflare account. Supports since/before time filters and a limit. Records who changed what and when.",
 	}, getAccountAuditLogs)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "list_account_audit_log_product_categories",
+		Description: "List the product categories available for filtering account audit logs (v2).",
+	}, listAuditLogProductCategories)
 }

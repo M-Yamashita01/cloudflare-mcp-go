@@ -25,7 +25,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 
 ## Tools
 
-59 read-only tools grouped by domain, plus optional write tools (marked below) that are registered only when `CLOUDFLARE_MCP_ENABLE_WRITE=true`.
+60 read-only tools grouped by domain, plus optional write tools (marked below) that are registered only when `CLOUDFLARE_MCP_ENABLE_WRITE=true`.
 
 ### Zones & DNS
 
@@ -107,6 +107,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 | `get_account_logpush_transformer_content` | Get a Logpush transformer's content in an account. |
 | `list_account_logpush_transformer_versions` | List versions of a Logpush transformer in an account. |
 | `get_account_audit_logs_v2` | Get account audit logs (v2) with since/before/limit. |
+| `list_account_audit_log_product_categories` | List product categories for account audit logs (v2). |
 
 ### Security Center
 
