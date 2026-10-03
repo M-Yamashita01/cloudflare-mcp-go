@@ -214,6 +214,22 @@ func updateSecurityTxt(ctx context.Context, _ *mcp.CallToolRequest, input Update
 	return result, nil, err
 }
 
+// DeleteSecurityTxtInput holds parameters for deleting a zone security.txt.
+type DeleteSecurityTxtInput struct {
+	ZoneID string `json:"zone_id" jsonschema:"required,The ID of the zone"`
+}
+
+func deleteSecurityTxt(ctx context.Context, _ *mcp.CallToolRequest, input DeleteSecurityTxtInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	url := cfapi.APIBase + "/zones/" + input.ZoneID + "/security-center/securitytxt"
+	result, err := sendWrite(ctx, http.MethodDelete, url, apiToken, nil)
+	return result, nil, err
+}
+
 // RegisterWriteTools registers Security Center write (mutation) tools with the MCP server.
 //
 // It is called only when write mode is enabled via CLOUDFLARE_MCP_ENABLE_WRITE.
@@ -262,4 +278,9 @@ func RegisterWriteTools(server *mcp.Server) {
 		Name:        "update_securitytxt",
 		Description: "Create or update the security.txt for a zone. The config argument is a JSON object.",
 	}, updateSecurityTxt)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "delete_securitytxt",
+		Description: "Delete the security.txt for a zone.",
+	}, deleteSecurityTxt)
 }
