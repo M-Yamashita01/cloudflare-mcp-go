@@ -5,6 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"mime/multipart"
 	"net/http"
 	"os"
 
@@ -264,6 +266,71 @@ func batch(ctx context.Context, _ *mcp.CallToolRequest, input BatchInput) (*mcp.
 	return result, nil, nil
 }
 
+// ImportInput holds parameters for importing DNS records from a BIND file.
+type ImportInput struct {
+	ZoneID  string `json:"zone_id"           jsonschema:"required,The ID of the zone"`
+	File    string `json:"file"              jsonschema:"required,BIND zone file contents to import"`
+	Proxied string `json:"proxied,omitempty" jsonschema:"Optional proxied override expression (e.g. true to proxy all imported records)"`
+}
+
+func importRecords(ctx context.Context, _ *mcp.CallToolRequest, input ImportInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	var buf bytes.Buffer
+	w := multipart.NewWriter(&buf)
+	fw, err := w.CreateFormFile("file", "import.txt")
+	if err != nil {
+		return nil, nil, fmt.Errorf("building multipart form: %w", err)
+	}
+	if _, err := io.WriteString(fw, input.File); err != nil {
+		return nil, nil, fmt.Errorf("writing import file: %w", err)
+	}
+	if input.Proxied != "" {
+		if err := w.WriteField("proxied", input.Proxied); err != nil {
+			return nil, nil, fmt.Errorf("writing proxied field: %w", err)
+		}
+	}
+	if err := w.Close(); err != nil {
+		return nil, nil, fmt.Errorf("closing multipart form: %w", err)
+	}
+
+	url := cfapi.APIBase + "/zones/" + input.ZoneID + "/dns_records/import"
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, &buf)
+	if err != nil {
+		return nil, nil, fmt.Errorf("creating request: %w", err)
+	}
+	httpReq.Header.Set("Authorization", "Bearer "+apiToken)
+	httpReq.Header.Set("Content-Type", w.FormDataContentType())
+
+	resp, err := http.DefaultClient.Do(httpReq)
+	if err != nil {
+		return nil, nil, fmt.Errorf("calling Cloudflare API: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, nil, fmt.Errorf("reading response body: %w", err)
+	}
+
+	var cfResp cfapi.Response
+	if err := json.Unmarshal(respBody, &cfResp); err != nil {
+		return nil, nil, fmt.Errorf("parsing response: %w", err)
+	}
+	if !cfResp.Success {
+		return cfapi.APIErrorResult(cfResp.Errors), nil, nil
+	}
+
+	result, err := cfapi.FormatResult(&cfResp)
+	if err != nil {
+		return nil, nil, err
+	}
+	return result, nil, nil
+}
+
 // RegisterWriteTools registers DNS write (mutation) tools with the MCP server.
 //
 // It is called only when write mode is enabled via CLOUDFLARE_MCP_ENABLE_WRITE,
@@ -293,4 +360,9 @@ func RegisterWriteTools(server *mcp.Server) {
 		Name:        "batch_dns_records",
 		Description: "Apply a batch of DNS record changes atomically. The operations argument is a JSON object with optional deletes, patches, posts, and puts arrays.",
 	}, batch)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "import_dns_records",
+		Description: "Import DNS records into a Cloudflare zone from a BIND zone file. Provide the file contents; optionally set a proxied override expression.",
+	}, importRecords)
 }
