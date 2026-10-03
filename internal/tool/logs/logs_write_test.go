@@ -150,3 +150,19 @@ func Test_updateAccountLogpushTransformer_returns_error_when_token_is_not_set(t 
 		t.Error("got IsError = false, want true")
 	}
 }
+
+func Test_deleteAccountLogpushTransformer_returns_error_when_token_is_not_set(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := deleteAccountLogpushTransformer(context.Background(), &mcp.CallToolRequest{}, DeleteAccountLogpushTransformerInput{AccountID: "acc123", TransformerID: "t1"})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}
