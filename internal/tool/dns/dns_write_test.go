@@ -109,6 +109,22 @@ func Test_overwrite_returns_error_when_token_is_not_set(t *testing.T) {
 	}
 }
 
+func Test_scan_returns_error_when_token_is_not_set(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := scan(context.Background(), &mcp.CallToolRequest{}, ScanInput{ZoneID: "abc123"})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}
+
 func Test_importRecords_returns_error_when_token_is_not_set(t *testing.T) {
 	// Arrange
 	t.Setenv("CLOUDFLARE_API_TOKEN", "")
