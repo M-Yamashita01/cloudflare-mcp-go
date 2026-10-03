@@ -645,6 +645,49 @@ func listAccountLogFiles(ctx context.Context, _ *mcp.CallToolRequest, input List
 	}, nil, nil
 }
 
+// RetrieveAccountLogsInput holds parameters for retrieving stored account logs.
+type RetrieveAccountLogsInput struct {
+	AccountID string `json:"account_id"      jsonschema:"required,The ID of the Cloudflare account"`
+	Start     string `json:"start,omitempty" jsonschema:"Start time (RFC3339 or Unix timestamp)"`
+	End       string `json:"end,omitempty"   jsonschema:"End time (RFC3339 or Unix timestamp)"`
+	Path      string `json:"path,omitempty"  jsonschema:"Path/bucket of the log file(s) to retrieve"`
+}
+
+func retrieveAccountLogs(ctx context.Context, _ *mcp.CallToolRequest, input RetrieveAccountLogsInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	reqURL := cfapi.APIBase + "/accounts/" + input.AccountID + "/logs/retrieve"
+	var params []string
+	if input.Start != "" {
+		params = append(params, "start="+url.QueryEscape(input.Start))
+	}
+	if input.End != "" {
+		params = append(params, "end="+url.QueryEscape(input.End))
+	}
+	if input.Path != "" {
+		params = append(params, "path="+url.QueryEscape(input.Path))
+	}
+	if len(params) > 0 {
+		reqURL += "?" + strings.Join(params, "&")
+	}
+
+	body, err := doLogpullRequest(ctx, reqURL, apiToken)
+	if err != nil {
+		return nil, nil, err
+	}
+	if body == "" {
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{&mcp.TextContent{Text: "No log entries found"}},
+		}, nil, nil
+	}
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{&mcp.TextContent{Text: body}},
+	}, nil, nil
+}
+
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "get_log_by_rayid",
@@ -795,4 +838,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "list_account_log_files",
 		Description: "List stored log files for a Cloudflare account (Logpull/stored logs). Supports start, end, and bucket filters.",
 	}, listAccountLogFiles)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "retrieve_account_logs",
+		Description: "Retrieve stored log entries for a Cloudflare account (Logpull). Returns NDJSON. Supports start, end, and path filters.",
+	}, retrieveAccountLogs)
 }
