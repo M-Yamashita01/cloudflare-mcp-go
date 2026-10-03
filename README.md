@@ -194,6 +194,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 | `create_miscategorization` | Report a domain/IP/URL miscategorization (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `create_sinkhole` | Create a DNS sinkhole (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `update_sinkhole` | Update a DNS sinkhole (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
+| `delete_sinkhole` | Delete a DNS sinkhole by ID (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 
 ### Account & audit
 
