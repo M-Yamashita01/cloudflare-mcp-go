@@ -133,3 +133,74 @@ func Test_rateLimitBody_omits_timeout_when_zero(t *testing.T) {
 		t.Error("got timeout present, want it omitted when zero")
 	}
 }
+
+func Test_createRuleset_returns_error_when_token_is_not_set(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := createRuleset(context.Background(), &mcp.CallToolRequest{}, CreateRulesetInput{ZoneID: "abc123", Name: "custom", Kind: "custom", Phase: "http_request_firewall_custom"})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}
+
+func Test_deleteRuleset_returns_error_when_token_is_not_set(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := deleteRuleset(context.Background(), &mcp.CallToolRequest{}, DeleteRulesetInput{ZoneID: "abc123", RulesetID: "rs123"})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}
+
+func Test_createRuleset_returns_error_when_rules_is_invalid_json(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "token")
+
+	// Act
+	result, _, err := createRuleset(context.Background(), &mcp.CallToolRequest{}, CreateRulesetInput{ZoneID: "abc123", Name: "custom", Kind: "custom", Phase: "http_request_firewall_custom", Rules: "not-json"})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}
+
+func Test_parseRules_returns_nil_for_empty_string(t *testing.T) {
+	// Arrange & Act
+	rules, err := parseRules("")
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if rules != nil {
+		t.Errorf("got %v, want nil", rules)
+	}
+}
+
+func Test_parseRules_returns_error_when_not_an_array(t *testing.T) {
+	// Arrange & Act
+	_, err := parseRules(`{"expression":"true"}`)
+
+	// Assert
+	if err == nil {
+		t.Error("got nil error, want error for non-array rules")
+	}
+}
