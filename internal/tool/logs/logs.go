@@ -412,6 +412,22 @@ func listAccountLogpushTransformers(ctx context.Context, _ *mcp.CallToolRequest,
 	return result, nil, err
 }
 
+// GetAccountLogpushTransformerInput holds parameters for getting a Logpush transformer in an account.
+type GetAccountLogpushTransformerInput struct {
+	AccountID     string `json:"account_id"     jsonschema:"required,The ID of the Cloudflare account"`
+	TransformerID string `json:"transformer_id" jsonschema:"required,The ID of the Logpush transformer"`
+}
+
+func getAccountLogpushTransformer(ctx context.Context, _ *mcp.CallToolRequest, input GetAccountLogpushTransformerInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := doGet(ctx, cfapi.APIBase+"/accounts/"+input.AccountID+"/logpush/transformers/"+input.TransformerID, apiToken)
+	return result, nil, err
+}
+
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "get_log_by_rayid",
@@ -502,4 +518,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "list_account_logpush_transformers",
 		Description: "List Logpush transformers for a Cloudflare account.",
 	}, listAccountLogpushTransformers)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_account_logpush_transformer",
+		Description: "Get a specific Logpush transformer in a Cloudflare account by transformer ID.",
+	}, getAccountLogpushTransformer)
 }
