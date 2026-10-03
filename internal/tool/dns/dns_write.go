@@ -358,6 +358,33 @@ func scan(ctx context.Context, _ *mcp.CallToolRequest, input ScanInput) (*mcp.Ca
 	return result, nil, nil
 }
 
+// ScanTriggerInput holds parameters for triggering a DNS record scan.
+type ScanTriggerInput struct {
+	ZoneID string `json:"zone_id" jsonschema:"required,The ID of the zone"`
+}
+
+func scanTrigger(ctx context.Context, _ *mcp.CallToolRequest, input ScanTriggerInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	url := cfapi.APIBase + "/zones/" + input.ZoneID + "/dns_records/scan/trigger"
+	cfResp, err := cfapi.DoRequest(ctx, http.MethodPost, url, apiToken, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	if !cfResp.Success {
+		return cfapi.APIErrorResult(cfResp.Errors), nil, nil
+	}
+
+	result, err := cfapi.FormatResult(cfResp)
+	if err != nil {
+		return nil, nil, err
+	}
+	return result, nil, nil
+}
+
 // RegisterWriteTools registers DNS write (mutation) tools with the MCP server.
 //
 // It is called only when write mode is enabled via CLOUDFLARE_MCP_ENABLE_WRITE,
@@ -397,4 +424,9 @@ func RegisterWriteTools(server *mcp.Server) {
 		Name:        "scan_dns_records",
 		Description: "Scan a Cloudflare zone for DNS records at common names (for zones with a known provider). Returns the scan result.",
 	}, scan)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "trigger_dns_record_scan",
+		Description: "Trigger an asynchronous DNS record scan for a Cloudflare zone. Use list_scanned_dns_records to review results and review_scanned_dns_records to accept them.",
+	}, scanTrigger)
 }
