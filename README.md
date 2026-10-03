@@ -140,6 +140,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 | `create_instant_logs_job` | Create a zone Instant Logs job (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `get_logpush_ownership_challenge` | Request a zone Logpush ownership challenge (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `validate_logpush_ownership` | Validate a zone Logpush ownership challenge (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
+| `validate_logpush_destination` | Validate a zone Logpush destination (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 
 ### Security Center
 
