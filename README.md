@@ -116,6 +116,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 | `query_account_logs_sql` | Run a Logs Explorer SQL query for an account (GET). |
 | `list_account_log_files` | List stored log files for an account (start/end/bucket). |
 | `retrieve_account_logs` | Retrieve stored log entries (NDJSON) for an account. |
+| `create_account_logpush_job` | Create an account Logpush job (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 
 ### Security Center
 
