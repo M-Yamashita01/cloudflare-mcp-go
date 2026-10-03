@@ -381,6 +381,22 @@ func listAccountLogpushDatasetJobs(ctx context.Context, _ *mcp.CallToolRequest, 
 	return result, nil, err
 }
 
+// ListAccountLogpushDatasetFieldsInput holds parameters for listing a dataset's Logpush fields in an account.
+type ListAccountLogpushDatasetFieldsInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+	DatasetID string `json:"dataset_id" jsonschema:"required,The Logpush dataset ID (e.g. http_requests, audit_logs)"`
+}
+
+func listAccountLogpushDatasetFields(ctx context.Context, _ *mcp.CallToolRequest, input ListAccountLogpushDatasetFieldsInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := doGet(ctx, cfapi.APIBase+"/accounts/"+input.AccountID+"/logpush/datasets/"+input.DatasetID+"/fields", apiToken)
+	return result, nil, err
+}
+
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "get_log_by_rayid",
@@ -461,4 +477,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "list_account_logpush_dataset_jobs",
 		Description: "List Logpush jobs for a specific dataset in a Cloudflare account.",
 	}, listAccountLogpushDatasetJobs)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "list_account_logpush_dataset_fields",
+		Description: "List the available Logpush fields for a specific dataset in a Cloudflare account.",
+	}, listAccountLogpushDatasetFields)
 }
