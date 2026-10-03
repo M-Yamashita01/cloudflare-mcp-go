@@ -198,3 +198,19 @@ func Test_checkAccountLogpushDestinationExists_returns_error_when_token_is_not_s
 		t.Error("got IsError = false, want true")
 	}
 }
+
+func Test_validateAccountLogpushOrigin_returns_error_when_token_is_not_set(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := validateAccountLogpushOrigin(context.Background(), &mcp.CallToolRequest{}, ValidateAccountLogpushOriginInput{AccountID: "acc123", Config: `{"dataset":"http_requests"}`})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}
