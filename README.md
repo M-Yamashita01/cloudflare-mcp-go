@@ -120,6 +120,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 | `update_account_logpush_job` | Update an account Logpush job (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `delete_account_logpush_job` | Delete an account Logpush job (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `get_account_logpush_ownership_challenge` | Request an account Logpush ownership challenge (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
+| `validate_account_logpush_ownership` | Validate an account Logpush ownership challenge (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 
 ### Security Center
 
