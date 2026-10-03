@@ -128,6 +128,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 | `validate_account_logpush_destination` | Validate an account Logpush destination (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `check_account_logpush_destination_exists` | Check an account Logpush destination exists (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `validate_account_logpush_origin` | Validate account Logpush origin options (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
+| `update_cmb_config` | Update the Customer Metadata Boundary config (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 
 ### Security Center
 
