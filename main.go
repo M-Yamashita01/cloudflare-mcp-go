@@ -53,6 +53,7 @@ func main() {
 	if writeEnabled {
 		log.Println("Write tools enabled via " + cfapi.EnableWriteEnv)
 		dns.RegisterWriteTools(server)
+		zone.RegisterWriteTools(server)
 	}
 
 	log.Println("Starting Cloudflare MCP server (stdio)...")
