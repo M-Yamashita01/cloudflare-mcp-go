@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 
@@ -316,6 +317,23 @@ func getLogDataset(ctx context.Context, _ *mcp.CallToolRequest, input GetLogData
 	return result, nil, err
 }
 
+// QueryLogsSQLInput holds parameters for running a Logs Explorer SQL query in a zone.
+type QueryLogsSQLInput struct {
+	ZoneID string `json:"zone_id" jsonschema:"required,The ID of the zone"`
+	Query  string `json:"query"   jsonschema:"required,The SQL query to run against Logs Explorer"`
+}
+
+func queryLogsSQL(ctx context.Context, _ *mcp.CallToolRequest, input QueryLogsSQLInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	reqURL := cfapi.APIBase + "/zones/" + input.ZoneID + "/logs/explorer/query/sql?query=" + url.QueryEscape(input.Query)
+	result, err := doGet(ctx, reqURL, apiToken)
+	return result, nil, err
+}
+
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "get_log_by_rayid",
@@ -376,4 +394,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "get_log_dataset",
 		Description: "Get a specific Logs Explorer dataset for a Cloudflare zone by dataset ID.",
 	}, getLogDataset)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "query_logs_sql",
+		Description: "Run a Logs Explorer SQL query for a Cloudflare zone (GET). Returns the query results.",
+	}, queryLogsSQL)
 }
