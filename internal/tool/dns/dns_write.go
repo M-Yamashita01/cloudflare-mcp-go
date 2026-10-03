@@ -462,6 +462,56 @@ func updateSettings(ctx context.Context, _ *mcp.CallToolRequest, input UpdateSet
 	return result, nil, nil
 }
 
+// EditDNSSECInput holds parameters for editing a zone's DNSSEC status.
+type EditDNSSECInput struct {
+	ZoneID      string `json:"zone_id"            jsonschema:"required,The ID of the zone"`
+	Status      string `json:"status,omitempty"   jsonschema:"DNSSEC status: active or disabled"`
+	MultiSigner *bool  `json:"dnssec_multi_signer,omitempty" jsonschema:"Enable multi-signer DNSSEC"`
+	Presigned   *bool  `json:"dnssec_presigned,omitempty"    jsonschema:"Enable presigned DNSSEC"`
+	UseNSEC3    *bool  `json:"dnssec_use_nsec3,omitempty"    jsonschema:"Use NSEC3 instead of NSEC"`
+}
+
+func editDNSSEC(ctx context.Context, _ *mcp.CallToolRequest, input EditDNSSECInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	body := map[string]any{}
+	if input.Status != "" {
+		body["status"] = input.Status
+	}
+	if input.MultiSigner != nil {
+		body["dnssec_multi_signer"] = *input.MultiSigner
+	}
+	if input.Presigned != nil {
+		body["dnssec_presigned"] = *input.Presigned
+	}
+	if input.UseNSEC3 != nil {
+		body["dnssec_use_nsec3"] = *input.UseNSEC3
+	}
+
+	payload, err := json.Marshal(body)
+	if err != nil {
+		return nil, nil, fmt.Errorf("marshaling request body: %w", err)
+	}
+
+	url := cfapi.APIBase + "/zones/" + input.ZoneID + "/dnssec"
+	cfResp, err := cfapi.DoRequest(ctx, http.MethodPatch, url, apiToken, bytes.NewReader(payload))
+	if err != nil {
+		return nil, nil, err
+	}
+	if !cfResp.Success {
+		return cfapi.APIErrorResult(cfResp.Errors), nil, nil
+	}
+
+	result, err := cfapi.FormatResult(cfResp)
+	if err != nil {
+		return nil, nil, err
+	}
+	return result, nil, nil
+}
+
 // RegisterWriteTools registers DNS write (mutation) tools with the MCP server.
 //
 // It is called only when write mode is enabled via CLOUDFLARE_MCP_ENABLE_WRITE,
@@ -516,4 +566,9 @@ func RegisterWriteTools(server *mcp.Server) {
 		Name:        "update_dns_settings",
 		Description: "Update DNS settings for a Cloudflare zone (e.g. Foundation DNS, multi-provider, nameservers). The settings argument is a JSON object of fields to change.",
 	}, updateSettings)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "edit_dnssec",
+		Description: "Edit DNSSEC status for a Cloudflare zone. Set status to active or disabled, and optionally toggle multi-signer, presigned, or NSEC3.",
+	}, editDNSSEC)
 }
