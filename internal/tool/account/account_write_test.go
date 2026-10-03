@@ -214,3 +214,19 @@ func Test_createCancelReason_returns_error_when_token_is_not_set(t *testing.T) {
 		t.Error("got IsError = false, want true")
 	}
 }
+
+func Test_createToken_returns_error_when_token_is_not_set(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := createToken(context.Background(), &mcp.CallToolRequest{}, CreateTokenInput{AccountID: "acc123", Config: `{"name":"t"}`})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}
