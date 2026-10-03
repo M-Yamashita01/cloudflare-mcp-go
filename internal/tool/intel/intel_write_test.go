@@ -118,3 +118,19 @@ func Test_updateIndicatorFeed_returns_error_when_token_is_not_set(t *testing.T) 
 		t.Error("got IsError = false, want true")
 	}
 }
+
+func Test_updateFeedData_returns_error_when_token_is_not_set(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := updateFeedData(context.Background(), &mcp.CallToolRequest{}, UpdateFeedDataInput{AccountID: "acc123", FeedID: "1", Source: "data"})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}

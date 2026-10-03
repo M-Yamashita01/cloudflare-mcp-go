@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"os"
 
@@ -157,6 +158,66 @@ func updateIndicatorFeed(ctx context.Context, _ *mcp.CallToolRequest, input Upda
 	return result, nil, err
 }
 
+// UpdateFeedDataInput holds parameters for updating indicator feed data (snapshot).
+type UpdateFeedDataInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+	FeedID    string `json:"feed_id"    jsonschema:"required,The ID of the indicator feed"`
+	Source    string `json:"source"     jsonschema:"required,The feed data content (STIX/CSV) to upload as the new snapshot"`
+}
+
+func updateFeedData(ctx context.Context, _ *mcp.CallToolRequest, input UpdateFeedDataInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	var buf bytes.Buffer
+	w := multipart.NewWriter(&buf)
+	fw, err := w.CreateFormFile("source", "snapshot.stix2")
+	if err != nil {
+		return nil, nil, fmt.Errorf("building multipart form: %w", err)
+	}
+	if _, err := io.WriteString(fw, input.Source); err != nil {
+		return nil, nil, fmt.Errorf("writing source: %w", err)
+	}
+	if err := w.Close(); err != nil {
+		return nil, nil, fmt.Errorf("closing multipart form: %w", err)
+	}
+
+	url := cfapi.APIBase + "/accounts/" + input.AccountID + "/intel/indicator-feeds/" + input.FeedID + "/snapshot"
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPut, url, &buf)
+	if err != nil {
+		return nil, nil, fmt.Errorf("creating request: %w", err)
+	}
+	httpReq.Header.Set("Authorization", "Bearer "+apiToken)
+	httpReq.Header.Set("Content-Type", w.FormDataContentType())
+
+	resp, err := http.DefaultClient.Do(httpReq)
+	if err != nil {
+		return nil, nil, fmt.Errorf("calling Cloudflare API: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, nil, fmt.Errorf("reading response body: %w", err)
+	}
+
+	var cfResp cfapi.Response
+	if err := json.Unmarshal(respBody, &cfResp); err != nil {
+		return nil, nil, fmt.Errorf("parsing response: %w", err)
+	}
+	if !cfResp.Success {
+		return cfapi.APIErrorResult(cfResp.Errors), nil, nil
+	}
+
+	result, err := cfapi.FormatResult(&cfResp)
+	if err != nil {
+		return nil, nil, err
+	}
+	return result, nil, nil
+}
+
 // RegisterWriteTools registers intel write (mutation) tools with the MCP server.
 //
 // It is called only when write mode is enabled via CLOUDFLARE_MCP_ENABLE_WRITE.
@@ -190,4 +251,9 @@ func RegisterWriteTools(server *mcp.Server) {
 		Name:        "update_indicator_feed",
 		Description: "Update the metadata of a threat-intelligence indicator feed by feed ID. The config argument is a JSON object of fields to change.",
 	}, updateIndicatorFeed)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "update_indicator_feed_data",
+		Description: "Update (upload a new snapshot of) a threat-intelligence indicator feed's data by feed ID. Provide the feed data as source (STIX/CSV).",
+	}, updateFeedData)
 }
