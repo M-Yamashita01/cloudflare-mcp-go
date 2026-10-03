@@ -197,3 +197,19 @@ func Test_listShadowZones_returns_error_when_token_is_not_set(t *testing.T) {
 		t.Error("got IsError = false, want true")
 	}
 }
+
+func Test_listShadowZoneHosts_returns_error_when_token_is_not_set(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := listShadowZoneHosts(context.Background(), &mcp.CallToolRequest{}, ListShadowZoneHostsInput{AccountID: "acc123", Partner: "p", Domain: "example.com"})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}
