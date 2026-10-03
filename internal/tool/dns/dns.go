@@ -232,6 +232,33 @@ func getUsage(ctx context.Context, _ *mcp.CallToolRequest, input GetUsageInput) 
 	return result, nil, nil
 }
 
+// GetSettingsInput holds parameters for retrieving a zone's DNS settings.
+type GetSettingsInput struct {
+	ZoneID string `json:"zone_id" jsonschema:"required,The ID of the zone"`
+}
+
+func getSettings(ctx context.Context, _ *mcp.CallToolRequest, input GetSettingsInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	url := cfapi.APIBase + "/zones/" + input.ZoneID + "/dns_settings"
+	cfResp, err := cfapi.DoRequest(ctx, http.MethodGet, url, apiToken, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	if !cfResp.Success {
+		return cfapi.APIErrorResult(cfResp.Errors), nil, nil
+	}
+
+	result, err := cfapi.FormatResult(cfResp)
+	if err != nil {
+		return nil, nil, err
+	}
+	return result, nil, nil
+}
+
 // RegisterTools registers DNS management tools with the MCP server.
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
@@ -263,4 +290,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "get_dns_record_usage",
 		Description: "Get DNS record usage for a Cloudflare zone (counts toward plan limits). Returns current and allowed record counts.",
 	}, getUsage)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_dns_settings",
+		Description: "Get DNS settings for a Cloudflare zone (e.g. Foundation DNS, multi-provider, nameservers, zone mode). Returns the zone's DNS configuration.",
+	}, getSettings)
 }
