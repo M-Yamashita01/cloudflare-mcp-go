@@ -280,6 +280,21 @@ func updateCMBConfig(ctx context.Context, _ *mcp.CallToolRequest, input UpdateCM
 	return result, nil, err
 }
 
+// DeleteCMBConfigInput holds parameters for deleting the Customer Metadata Boundary config in an account.
+type DeleteCMBConfigInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+}
+
+func deleteCMBConfig(ctx context.Context, _ *mcp.CallToolRequest, input DeleteCMBConfigInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := sendWrite(ctx, http.MethodDelete, cfapi.APIBase+"/accounts/"+input.AccountID+"/logs/control/cmb/config", apiToken, nil)
+	return result, nil, err
+}
+
 // RegisterWriteTools registers logs write (mutation) tools with the MCP server.
 //
 // It is called only when write mode is enabled via CLOUDFLARE_MCP_ENABLE_WRITE.
@@ -348,4 +363,9 @@ func RegisterWriteTools(server *mcp.Server) {
 		Name:        "update_cmb_config",
 		Description: "Update the Customer Metadata Boundary (CMB) config for a Cloudflare account. The config argument is a JSON object (e.g. regions).",
 	}, updateCMBConfig)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "delete_cmb_config",
+		Description: "Delete (reset) the Customer Metadata Boundary (CMB) config for a Cloudflare account.",
+	}, deleteCMBConfig)
 }
