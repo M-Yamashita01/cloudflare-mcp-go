@@ -33,6 +33,32 @@ func Test_ListInput_has_zero_value_defaults(t *testing.T) {
 	}
 }
 
+func Test_get_returns_error_when_token_is_not_set(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := get(context.Background(), &mcp.CallToolRequest{}, GetInput{ZoneID: "abc123", RecordID: "rec123"})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}
+
+func Test_GetInput_has_zero_value_defaults(t *testing.T) {
+	// Arrange & Act
+	input := GetInput{}
+
+	// Assert
+	if input != (GetInput{}) {
+		t.Error("got non-zero defaults, want zero values for GetInput")
+	}
+}
+
 func Test_getAnalytics_returns_error_when_token_is_not_set(t *testing.T) {
 	// Arrange
 	t.Setenv("CLOUDFLARE_API_TOKEN", "")
