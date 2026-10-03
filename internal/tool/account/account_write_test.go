@@ -134,3 +134,19 @@ func Test_createSubscription_returns_error_when_token_is_not_set(t *testing.T) {
 		t.Error("got IsError = false, want true")
 	}
 }
+
+func Test_cancelDowngrade_returns_error_when_token_is_not_set(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := cancelDowngrade(context.Background(), &mcp.CallToolRequest{}, CancelDowngradeInput{AccountID: "acc123"})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}

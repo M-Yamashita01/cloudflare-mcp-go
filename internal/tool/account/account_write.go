@@ -163,6 +163,21 @@ func createSubscription(ctx context.Context, _ *mcp.CallToolRequest, input Creat
 	return result, nil, err
 }
 
+// CancelDowngradeInput holds parameters for canceling a delayed subscription downgrade.
+type CancelDowngradeInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+}
+
+func cancelDowngrade(ctx context.Context, _ *mcp.CallToolRequest, input CancelDowngradeInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := sendWrite(ctx, http.MethodPost, cfapi.APIBase+"/accounts/"+input.AccountID+"/subscriptions/cancel-downgrade", apiToken, nil)
+	return result, nil, err
+}
+
 // RegisterWriteTools registers account write (mutation) tools with the MCP server.
 //
 // It is called only when write mode is enabled via CLOUDFLARE_MCP_ENABLE_WRITE.
@@ -201,4 +216,9 @@ func RegisterWriteTools(server *mcp.Server) {
 		Name:        "create_account_subscription",
 		Description: "Create a subscription for a Cloudflare account. The config argument is a JSON object (rate_plan, etc.).",
 	}, createSubscription)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "cancel_delayed_downgrade",
+		Description: "Cancel a pending (delayed) subscription downgrade for a Cloudflare account.",
+	}, cancelDowngrade)
 }
