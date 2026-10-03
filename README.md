@@ -179,6 +179,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 | `start_zone_scan` | Start an on-demand zone Security Center scan (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `update_zone_insight_classification` | Update the classification of a Security Center insight in a zone (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `dismiss_zone_insight` | Dismiss or un-dismiss a Security Center insight in a zone (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
+| `update_securitytxt` | Create or update the security.txt for a zone (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `get_insight_counts` | Aggregated insight counts by severity, class, or type. |
 
 ### Threat intelligence
