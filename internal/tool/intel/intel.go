@@ -259,6 +259,21 @@ func listASRIssues(ctx context.Context, _ *mcp.CallToolRequest, input ListASRIss
 	return result, nil, err
 }
 
+// GetASRClassCountsInput holds parameters for attack-surface issue counts by class.
+type GetASRClassCountsInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+}
+
+func getASRClassCounts(ctx context.Context, _ *mcp.CallToolRequest, input GetASRClassCountsInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := doGet(ctx, cfapi.APIBase+"/accounts/"+input.AccountID+"/intel/attack-surface-report/issues/class", apiToken)
+	return result, nil, err
+}
+
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "get_ip_intel",
@@ -304,4 +319,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "list_attack_surface_issues",
 		Description: "List Security Center attack-surface-report issues for a Cloudflare account (misconfigurations and exposures).",
 	}, listASRIssues)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_attack_surface_issue_counts_by_class",
+		Description: "Get Security Center attack-surface issue counts grouped by class for a Cloudflare account.",
+	}, getASRClassCounts)
 }
