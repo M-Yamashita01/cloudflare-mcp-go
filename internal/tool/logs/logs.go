@@ -585,6 +585,23 @@ func getAccountLogDataset(ctx context.Context, _ *mcp.CallToolRequest, input Get
 	return result, nil, err
 }
 
+// QueryAccountLogsSQLInput holds parameters for running a Logs Explorer SQL query in an account.
+type QueryAccountLogsSQLInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+	Query     string `json:"query"      jsonschema:"required,The SQL query to run against Logs Explorer"`
+}
+
+func queryAccountLogsSQL(ctx context.Context, _ *mcp.CallToolRequest, input QueryAccountLogsSQLInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	reqURL := cfapi.APIBase + "/accounts/" + input.AccountID + "/logs/explorer/query/sql?query=" + url.QueryEscape(input.Query)
+	result, err := doGet(ctx, reqURL, apiToken)
+	return result, nil, err
+}
+
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "get_log_by_rayid",
@@ -725,4 +742,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "get_account_log_dataset",
 		Description: "Get a specific Logs Explorer dataset for a Cloudflare account by dataset ID.",
 	}, getAccountLogDataset)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "query_account_logs_sql",
+		Description: "Run a Logs Explorer SQL query for a Cloudflare account (GET). Returns the query results.",
+	}, queryAccountLogsSQL)
 }
