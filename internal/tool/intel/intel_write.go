@@ -218,6 +218,25 @@ func updateFeedData(ctx context.Context, _ *mcp.CallToolRequest, input UpdateFee
 	return result, nil, nil
 }
 
+// CreateMiscategorizationInput holds parameters for reporting a miscategorization.
+type CreateMiscategorizationInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+	Config    string `json:"config"     jsonschema:"required,JSON object describing the miscategorization (indicator_type, url/ip, content_adds/removes)"`
+}
+
+func createMiscategorization(ctx context.Context, _ *mcp.CallToolRequest, input CreateMiscategorizationInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+	if result := invalidJSON("config", input.Config); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := sendWrite(ctx, http.MethodPost, cfapi.APIBase+"/accounts/"+input.AccountID+"/intel/miscategorization", apiToken, bytes.NewReader([]byte(input.Config)))
+	return result, nil, err
+}
+
 // RegisterWriteTools registers intel write (mutation) tools with the MCP server.
 //
 // It is called only when write mode is enabled via CLOUDFLARE_MCP_ENABLE_WRITE.
@@ -256,4 +275,9 @@ func RegisterWriteTools(server *mcp.Server) {
 		Name:        "update_indicator_feed_data",
 		Description: "Update (upload a new snapshot of) a threat-intelligence indicator feed's data by feed ID. Provide the feed data as source (STIX/CSV).",
 	}, updateFeedData)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "create_miscategorization",
+		Description: "Report a miscategorization of a domain, IP, or URL to Cloudflare threat intelligence. The config argument is a JSON object (indicator_type, target, content category changes).",
+	}, createMiscategorization)
 }
