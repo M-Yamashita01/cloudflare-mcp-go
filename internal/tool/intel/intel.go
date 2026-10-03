@@ -244,6 +244,21 @@ func listASRIssueTypes(ctx context.Context, _ *mcp.CallToolRequest, input ListAS
 	return result, nil, err
 }
 
+// ListASRIssuesInput holds parameters for listing attack-surface issues.
+type ListASRIssuesInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+}
+
+func listASRIssues(ctx context.Context, _ *mcp.CallToolRequest, input ListASRIssuesInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := doGet(ctx, cfapi.APIBase+"/accounts/"+input.AccountID+"/intel/attack-surface-report/issues", apiToken)
+	return result, nil, err
+}
+
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "get_ip_intel",
@@ -284,4 +299,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "list_attack_surface_issue_types",
 		Description: "List the Security Center attack-surface-report issue types for a Cloudflare account.",
 	}, listASRIssueTypes)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "list_attack_surface_issues",
+		Description: "List Security Center attack-surface-report issues for a Cloudflare account (misconfigurations and exposures).",
+	}, listASRIssues)
 }
