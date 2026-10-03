@@ -272,6 +272,21 @@ func getAccountState(ctx context.Context, _ *mcp.CallToolRequest, input GetAccou
 	return result, nil, err
 }
 
+// GetZoneInsightsAuditLogInput holds parameters for the zone insights audit log.
+type GetZoneInsightsAuditLogInput struct {
+	ZoneID string `json:"zone_id" jsonschema:"required,The ID of the zone"`
+}
+
+func getZoneInsightsAuditLog(ctx context.Context, _ *mcp.CallToolRequest, input GetZoneInsightsAuditLogInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := doGet(ctx, cfapi.APIBase+"/zones/"+input.ZoneID+"/security-center/insights/audit-log", apiToken)
+	return result, nil, err
+}
+
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "list_security_insights",
@@ -337,4 +352,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "get_account_security_center_state",
 		Description: "Get the Security Center state (onboarding/configuration status) for a Cloudflare account.",
 	}, getAccountState)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_zone_insights_audit_log",
+		Description: "Get the Security Center insights audit log for a Cloudflare zone (zone scope).",
+	}, getZoneInsightsAuditLog)
 }
