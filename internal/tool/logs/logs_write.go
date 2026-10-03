@@ -579,6 +579,26 @@ func createLogDataset(ctx context.Context, _ *mcp.CallToolRequest, input CreateL
 	return result, nil, err
 }
 
+// UpdateLogDatasetInput holds parameters for updating a Logs Explorer dataset in a zone.
+type UpdateLogDatasetInput struct {
+	ZoneID    string `json:"zone_id"    jsonschema:"required,The ID of the zone"`
+	DatasetID string `json:"dataset_id" jsonschema:"required,The ID of the Logs Explorer dataset"`
+	Config    string `json:"config"     jsonschema:"required,JSON object of dataset fields to update"`
+}
+
+func updateLogDataset(ctx context.Context, _ *mcp.CallToolRequest, input UpdateLogDatasetInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+	if result := invalidJSON("config", input.Config); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := sendWrite(ctx, http.MethodPut, cfapi.APIBase+"/zones/"+input.ZoneID+"/logs/explorer/datasets/"+input.DatasetID, apiToken, bytes.NewReader([]byte(input.Config)))
+	return result, nil, err
+}
+
 // RegisterWriteTools registers logs write (mutation) tools with the MCP server.
 //
 // It is called only when write mode is enabled via CLOUDFLARE_MCP_ENABLE_WRITE.
@@ -727,4 +747,9 @@ func RegisterWriteTools(server *mcp.Server) {
 		Name:        "create_log_dataset",
 		Description: "Create a Logs Explorer dataset for a Cloudflare zone. The config argument is a JSON object describing the dataset.",
 	}, createLogDataset)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "update_log_dataset",
+		Description: "Update a Logs Explorer dataset in a Cloudflare zone by dataset ID. The config argument is a JSON object of fields to change.",
+	}, updateLogDataset)
 }
