@@ -346,6 +346,23 @@ func getBulkDomainDetails(ctx context.Context, _ *mcp.CallToolRequest, input Get
 	return result, nil, err
 }
 
+// GetURLIntelInput holds parameters for getting URL threat intelligence.
+type GetURLIntelInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+	URL       string `json:"url"        jsonschema:"required,The URL to look up"`
+}
+
+func getURLIntel(ctx context.Context, _ *mcp.CallToolRequest, input GetURLIntelInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	reqURL := cfapi.APIBase + "/accounts/" + input.AccountID + "/intel/url?url=" + url.QueryEscape(input.URL)
+	result, err := doGet(ctx, reqURL, apiToken)
+	return result, nil, err
+}
+
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "get_ip_intel",
@@ -416,4 +433,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "get_bulk_domain_details",
 		Description: "Get threat intelligence details for multiple domains at once (GET bulk). Returns per-domain risk and category data.",
 	}, getBulkDomainDetails)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_url_intel",
+		Description: "Get threat intelligence for a URL. Returns risk and category information for the URL.",
+	}, getURLIntel)
 }
