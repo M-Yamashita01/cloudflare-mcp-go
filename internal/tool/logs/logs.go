@@ -285,6 +285,21 @@ func listLogDatasets(ctx context.Context, _ *mcp.CallToolRequest, input ListLogD
 	return result, nil, err
 }
 
+// ListAvailableLogDatasetsInput holds parameters for listing available Logs Explorer datasets in a zone.
+type ListAvailableLogDatasetsInput struct {
+	ZoneID string `json:"zone_id" jsonschema:"required,The ID of the zone"`
+}
+
+func listAvailableLogDatasets(ctx context.Context, _ *mcp.CallToolRequest, input ListAvailableLogDatasetsInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := doGet(ctx, cfapi.APIBase+"/zones/"+input.ZoneID+"/logs/explorer/datasets/available", apiToken)
+	return result, nil, err
+}
+
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "get_log_by_rayid",
@@ -335,4 +350,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "list_log_datasets",
 		Description: "List Logs Explorer datasets configured for a Cloudflare zone.",
 	}, listLogDatasets)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "list_available_log_datasets",
+		Description: "List the Logs Explorer datasets available to be configured for a Cloudflare zone.",
+	}, listAvailableLogDatasets)
 }
