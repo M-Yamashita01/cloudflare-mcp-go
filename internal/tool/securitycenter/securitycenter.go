@@ -224,6 +224,22 @@ func getPartnerSettings(ctx context.Context, _ *mcp.CallToolRequest, input GetPa
 	return result, nil, err
 }
 
+// ListShadowZonesInput holds parameters for listing partner-discovered shadow zones.
+type ListShadowZonesInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+	Partner   string `json:"partner"    jsonschema:"required,The partner identifier"`
+}
+
+func listShadowZones(ctx context.Context, _ *mcp.CallToolRequest, input ListShadowZonesInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := doGet(ctx, cfapi.APIBase+"/accounts/"+input.AccountID+"/security-center/partners/"+input.Partner+"/shadow-zones", apiToken)
+	return result, nil, err
+}
+
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "list_security_insights",
@@ -274,4 +290,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "get_partner_integration_settings",
 		Description: "Get the Security Center partner integration settings for a Cloudflare account and partner.",
 	}, getPartnerSettings)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "list_partner_shadow_zones",
+		Description: "List partner-discovered shadow zones (unmanaged domains) for a Cloudflare account and partner.",
+	}, listShadowZones)
 }
