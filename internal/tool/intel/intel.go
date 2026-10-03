@@ -437,6 +437,34 @@ func getIndicatorFeedData(ctx context.Context, _ *mcp.CallToolRequest, input Get
 	}, nil, nil
 }
 
+// DownloadIndicatorFeedInput holds parameters for downloading indicator feed data.
+type DownloadIndicatorFeedInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+	FeedID    string `json:"feed_id"    jsonschema:"required,The ID of the indicator feed"`
+}
+
+func downloadIndicatorFeed(ctx context.Context, _ *mcp.CallToolRequest, input DownloadIndicatorFeedInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	url := cfapi.APIBase + "/accounts/" + input.AccountID + "/intel/indicator-feeds/" + input.FeedID + "/download"
+	body, status, err := cfapi.DoRawRequest(ctx, http.MethodGet, url, apiToken, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	if status != http.StatusOK {
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{&mcp.TextContent{Text: fmt.Sprintf("Cloudflare API error: status %d: %s", status, string(body))}},
+			IsError: true,
+		}, nil, nil
+	}
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{&mcp.TextContent{Text: string(body)}},
+	}, nil, nil
+}
+
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "get_ip_intel",
@@ -532,4 +560,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "get_indicator_feed_data",
 		Description: "Get the raw data of a specific threat-intelligence indicator feed by feed ID. Returns the feed body (e.g. STIX/CSV).",
 	}, getIndicatorFeedData)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "download_indicator_feed_data",
+		Description: "Download the latest snapshot data of a threat-intelligence indicator feed by feed ID. Returns the raw feed body.",
+	}, downloadIndicatorFeed)
 }
