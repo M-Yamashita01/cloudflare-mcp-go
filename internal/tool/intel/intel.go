@@ -513,6 +513,22 @@ func getSinkhole(ctx context.Context, _ *mcp.CallToolRequest, input GetSinkholeI
 	return result, nil, err
 }
 
+// ListSinkholeIngressesInput holds parameters for listing a sinkhole's ingresses.
+type ListSinkholeIngressesInput struct {
+	AccountID  string `json:"account_id"  jsonschema:"required,The ID of the Cloudflare account"`
+	SinkholeID string `json:"sinkhole_id" jsonschema:"required,The ID of the sinkhole"`
+}
+
+func listSinkholeIngresses(ctx context.Context, _ *mcp.CallToolRequest, input ListSinkholeIngressesInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := doGet(ctx, cfapi.APIBase+"/accounts/"+input.AccountID+"/intel/sinkholes/"+input.SinkholeID+"/ingresses", apiToken)
+	return result, nil, err
+}
+
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "get_ip_intel",
@@ -628,4 +644,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "get_sinkhole",
 		Description: "Get a specific DNS sinkhole by ID for a Cloudflare account.",
 	}, getSinkhole)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "list_sinkhole_ingresses",
+		Description: "List the ingress rules for a specific DNS sinkhole by sinkhole ID.",
+	}, listSinkholeIngresses)
 }
