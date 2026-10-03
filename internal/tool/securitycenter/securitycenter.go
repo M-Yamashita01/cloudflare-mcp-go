@@ -302,6 +302,21 @@ func getZonePartnerCount(ctx context.Context, _ *mcp.CallToolRequest, input GetZ
 	return result, nil, err
 }
 
+// GetZoneScansInput holds parameters for recent zone scans.
+type GetZoneScansInput struct {
+	ZoneID string `json:"zone_id" jsonschema:"required,The ID of the zone"`
+}
+
+func getZoneScans(ctx context.Context, _ *mcp.CallToolRequest, input GetZoneScansInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := doGet(ctx, cfapi.APIBase+"/zones/"+input.ZoneID+"/security-center/insights/scans", apiToken)
+	return result, nil, err
+}
+
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "list_security_insights",
@@ -377,4 +392,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "get_zone_partner_insight_count",
 		Description: "Get the count of partner-provided Security Center insights for a Cloudflare zone.",
 	}, getZonePartnerCount)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_zone_recent_scans",
+		Description: "Get the recent Security Center scans for a Cloudflare zone.",
+	}, getZoneScans)
 }

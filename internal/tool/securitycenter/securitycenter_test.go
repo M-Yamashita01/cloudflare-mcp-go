@@ -261,3 +261,19 @@ func Test_getZonePartnerCount_returns_error_when_token_is_not_set(t *testing.T) 
 		t.Error("got IsError = false, want true")
 	}
 }
+
+func Test_getZoneScans_returns_error_when_token_is_not_set(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := getZoneScans(context.Background(), &mcp.CallToolRequest{}, GetZoneScansInput{ZoneID: "z1"})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}
