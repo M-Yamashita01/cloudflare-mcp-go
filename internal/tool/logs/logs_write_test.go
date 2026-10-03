@@ -454,3 +454,19 @@ func Test_validateLogpushOrigin_returns_error_when_token_is_not_set(t *testing.T
 		t.Error("got IsError = false, want true")
 	}
 }
+
+func Test_updateRetentionFlag_returns_error_when_token_is_not_set(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := updateRetentionFlag(context.Background(), &mcp.CallToolRequest{}, UpdateRetentionFlagInput{ZoneID: "abc123", Flag: true})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}
