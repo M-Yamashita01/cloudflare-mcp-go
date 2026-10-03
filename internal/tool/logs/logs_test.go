@@ -253,3 +253,19 @@ func Test_queryLogsSQL_returns_error_when_token_is_not_set(t *testing.T) {
 		t.Error("got IsError = false, want true")
 	}
 }
+
+func Test_listAccountLogpushJobs_returns_error_when_token_is_not_set(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := listAccountLogpushJobs(context.Background(), &mcp.CallToolRequest{}, ListAccountLogpushJobsInput{AccountID: "acc123"})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}
