@@ -569,6 +569,22 @@ func listAvailableAccountLogDatasets(ctx context.Context, _ *mcp.CallToolRequest
 	return result, nil, err
 }
 
+// GetAccountLogDatasetInput holds parameters for getting a Logs Explorer dataset in an account.
+type GetAccountLogDatasetInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+	DatasetID string `json:"dataset_id" jsonschema:"required,The ID of the Logs Explorer dataset"`
+}
+
+func getAccountLogDataset(ctx context.Context, _ *mcp.CallToolRequest, input GetAccountLogDatasetInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := doGet(ctx, cfapi.APIBase+"/accounts/"+input.AccountID+"/logs/explorer/datasets/"+input.DatasetID, apiToken)
+	return result, nil, err
+}
+
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "get_log_by_rayid",
@@ -704,4 +720,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "list_available_account_log_datasets",
 		Description: "List the Logs Explorer datasets available to be configured for a Cloudflare account.",
 	}, listAvailableAccountLogDatasets)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_account_log_dataset",
+		Description: "Get a specific Logs Explorer dataset for a Cloudflare account by dataset ID.",
+	}, getAccountLogDataset)
 }
