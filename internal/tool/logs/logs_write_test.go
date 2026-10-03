@@ -294,3 +294,19 @@ func Test_deleteAccountLogDataset_returns_error_when_token_is_not_set(t *testing
 		t.Error("got IsError = false, want true")
 	}
 }
+
+func Test_runAccountLogsSQL_returns_error_when_token_is_not_set(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := runAccountLogsSQL(context.Background(), &mcp.CallToolRequest{}, RunAccountLogsSQLInput{AccountID: "acc123", Config: `{"query":"SELECT 1"}`})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}
