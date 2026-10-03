@@ -109,6 +109,38 @@ func Test_overwrite_returns_error_when_token_is_not_set(t *testing.T) {
 	}
 }
 
+func Test_updateSettings_returns_error_when_token_is_not_set(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := updateSettings(context.Background(), &mcp.CallToolRequest{}, UpdateSettingsInput{ZoneID: "abc123", Settings: `{"multi_provider":true}`})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}
+
+func Test_updateSettings_returns_error_when_settings_is_invalid_json(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "token")
+
+	// Act
+	result, _, err := updateSettings(context.Background(), &mcp.CallToolRequest{}, UpdateSettingsInput{ZoneID: "abc123", Settings: "oops"})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}
+
 func Test_reviewScanned_returns_error_when_token_is_not_set(t *testing.T) {
 	// Arrange
 	t.Setenv("CLOUDFLARE_API_TOKEN", "")
