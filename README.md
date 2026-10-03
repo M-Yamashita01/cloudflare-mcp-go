@@ -25,7 +25,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 
 ## Tools
 
-61 read-only tools grouped by domain, plus optional write tools (marked below) that are registered only when `CLOUDFLARE_MCP_ENABLE_WRITE=true`.
+62 read-only tools grouped by domain, plus optional write tools (marked below) that are registered only when `CLOUDFLARE_MCP_ENABLE_WRITE=true`.
 
 ### Zones & DNS
 
@@ -109,6 +109,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 | `get_account_audit_logs_v2` | Get account audit logs (v2) with since/before/limit. |
 | `list_account_audit_log_product_categories` | List product categories for account audit logs (v2). |
 | `get_account_audit_log_history` | Get change history for an account audit log entry (v2). |
+| `get_cmb_config` | Get the Customer Metadata Boundary (CMB) config for an account. |
 
 ### Security Center
 
