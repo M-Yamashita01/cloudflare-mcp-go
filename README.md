@@ -51,6 +51,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 | `overwrite_dns_record` | Overwrite (fully replace) a DNS record by ID (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `batch_dns_records` | Apply a batch of DNS record changes atomically (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `import_dns_records` | Import DNS records from a BIND zone file (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
+| `scan_dns_records` | Scan a zone for DNS records at common names (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 
 ### Firewall, WAF & rate limiting
 
