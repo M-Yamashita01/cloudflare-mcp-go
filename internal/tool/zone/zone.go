@@ -84,6 +84,34 @@ func get(ctx context.Context, _ *mcp.CallToolRequest, input GetInput) (*mcp.Call
 	return result, nil, nil
 }
 
+// GetSettingsInput holds parameters for retrieving a zone's settings.
+type GetSettingsInput struct {
+	ZoneID string `json:"zone_id" jsonschema:"required,The ID of the zone whose settings to retrieve"`
+}
+
+func getSettings(ctx context.Context, _ *mcp.CallToolRequest, input GetSettingsInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	url := cfapi.APIBase + "/zones/" + input.ZoneID + "/settings"
+
+	cfResp, err := cfapi.DoRequest(ctx, http.MethodGet, url, apiToken, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	if !cfResp.Success {
+		return cfapi.APIErrorResult(cfResp.Errors), nil, nil
+	}
+
+	result, err := cfapi.FormatResult(cfResp)
+	if err != nil {
+		return nil, nil, err
+	}
+	return result, nil, nil
+}
+
 // RegisterTools registers zone management tools with the MCP server.
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
@@ -95,4 +123,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "get_zone",
 		Description: "Get details of a specific Cloudflare zone. Returns zone details such as ID, name, status, and plan.",
 	}, get)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_zone_settings",
+		Description: "Get configuration settings for a Cloudflare zone (SSL mode, minimum TLS version, cache level, security level, etc.). Returns the full settings list.",
+	}, getSettings)
 }

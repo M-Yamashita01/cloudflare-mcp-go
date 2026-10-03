@@ -58,3 +58,29 @@ func Test_GetInput_ZoneID_defaults_to_empty_string(t *testing.T) {
 		t.Errorf("got ZoneID = %q, want empty string", input.ZoneID)
 	}
 }
+
+func Test_getSettings_returns_error_when_token_is_not_set(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := getSettings(context.Background(), &mcp.CallToolRequest{}, GetSettingsInput{ZoneID: "abc123"})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}
+
+func Test_GetSettingsInput_ZoneID_defaults_to_empty_string(t *testing.T) {
+	// Arrange & Act
+	input := GetSettingsInput{}
+
+	// Assert
+	if input.ZoneID != "" {
+		t.Errorf("got ZoneID = %q, want empty string", input.ZoneID)
+	}
+}
