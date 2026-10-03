@@ -189,6 +189,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 | `grant_indicator_feed_permission` | Grant indicator feed view permission (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `create_indicator_feed_provider` | Create an indicator feed provider (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `revoke_indicator_feed_permission` | Revoke indicator feed view permission (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
+| `update_indicator_feed` | Update indicator feed metadata (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 
 ### Account & audit
 
