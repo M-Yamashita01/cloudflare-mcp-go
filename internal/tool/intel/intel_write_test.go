@@ -150,3 +150,19 @@ func Test_createMiscategorization_returns_error_when_token_is_not_set(t *testing
 		t.Error("got IsError = false, want true")
 	}
 }
+
+func Test_createSinkhole_returns_error_when_token_is_not_set(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := createSinkhole(context.Background(), &mcp.CallToolRequest{}, CreateSinkholeInput{AccountID: "acc123", Config: `{"name":"s"}`})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}

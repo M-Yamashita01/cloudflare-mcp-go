@@ -192,6 +192,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 | `update_indicator_feed` | Update indicator feed metadata (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `update_indicator_feed_data` | Upload a new indicator feed snapshot (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `create_miscategorization` | Report a domain/IP/URL miscategorization (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
+| `create_sinkhole` | Create a DNS sinkhole (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 
 ### Account & audit
 
