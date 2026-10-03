@@ -131,6 +131,21 @@ func getAccountInsightCounts(ctx context.Context, _ *mcp.CallToolRequest, input 
 	return result, nil, err
 }
 
+// GetAccountInsightsAuditLogInput holds parameters for the account insights audit log.
+type GetAccountInsightsAuditLogInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+}
+
+func getAccountInsightsAuditLog(ctx context.Context, _ *mcp.CallToolRequest, input GetAccountInsightsAuditLogInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := doGet(ctx, cfapi.APIBase+"/accounts/"+input.AccountID+"/security-center/insights/audit-log", apiToken)
+	return result, nil, err
+}
+
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "list_security_insights",
@@ -151,4 +166,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "get_account_insight_counts",
 		Description: "Get aggregated Security Center insight counts for a Cloudflare account by dimension (class, severity, or type).",
 	}, getAccountInsightCounts)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_account_insights_audit_log",
+		Description: "Get the Security Center insights audit log for a Cloudflare account (changes to insights over time).",
+	}, getAccountInsightsAuditLog)
 }
