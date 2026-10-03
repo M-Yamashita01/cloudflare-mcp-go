@@ -349,6 +349,22 @@ func listAccountLogpushJobs(ctx context.Context, _ *mcp.CallToolRequest, input L
 	return result, nil, err
 }
 
+// GetAccountLogpushJobInput holds parameters for getting a Logpush job in an account.
+type GetAccountLogpushJobInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+	JobID     string `json:"job_id"     jsonschema:"required,The ID of the Logpush job"`
+}
+
+func getAccountLogpushJob(ctx context.Context, _ *mcp.CallToolRequest, input GetAccountLogpushJobInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := doGet(ctx, cfapi.APIBase+"/accounts/"+input.AccountID+"/logpush/jobs/"+input.JobID, apiToken)
+	return result, nil, err
+}
+
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "get_log_by_rayid",
@@ -419,4 +435,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "list_account_logpush_jobs",
 		Description: "List Logpush jobs for a Cloudflare account. Returns job details including dataset, destination, and enabled status.",
 	}, listAccountLogpushJobs)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_account_logpush_job",
+		Description: "Get details of a specific Logpush job in a Cloudflare account by job ID.",
+	}, getAccountLogpushJob)
 }
