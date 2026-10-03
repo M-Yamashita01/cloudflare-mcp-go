@@ -481,6 +481,25 @@ func validateLogpushOwnership(ctx context.Context, _ *mcp.CallToolRequest, input
 	return result, nil, err
 }
 
+// ValidateLogpushDestinationInput holds parameters for validating a Logpush destination in a zone.
+type ValidateLogpushDestinationInput struct {
+	ZoneID string `json:"zone_id" jsonschema:"required,The ID of the zone"`
+	Config string `json:"config"  jsonschema:"required,JSON object with the destination_conf to validate"`
+}
+
+func validateLogpushDestination(ctx context.Context, _ *mcp.CallToolRequest, input ValidateLogpushDestinationInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+	if result := invalidJSON("config", input.Config); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := sendWrite(ctx, http.MethodPost, cfapi.APIBase+"/zones/"+input.ZoneID+"/logpush/validate/destination", apiToken, bytes.NewReader([]byte(input.Config)))
+	return result, nil, err
+}
+
 // RegisterWriteTools registers logs write (mutation) tools with the MCP server.
 //
 // It is called only when write mode is enabled via CLOUDFLARE_MCP_ENABLE_WRITE.
@@ -604,4 +623,9 @@ func RegisterWriteTools(server *mcp.Server) {
 		Name:        "validate_logpush_ownership",
 		Description: "Validate a Logpush ownership challenge for a Cloudflare zone. The config argument is a JSON object with destination_conf and ownership_challenge.",
 	}, validateLogpushOwnership)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "validate_logpush_destination",
+		Description: "Validate a Logpush destination configuration for a Cloudflare zone. The config argument is a JSON object with destination_conf.",
+	}, validateLogpushDestination)
 }
