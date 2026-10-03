@@ -174,6 +174,42 @@ func renameNamespace(ctx context.Context, _ *mcp.CallToolRequest, input RenameNa
 	return result, nil, nil
 }
 
+// bulkKVRequest validates jsonBody and performs a KV bulk write request.
+func bulkKVRequest(ctx context.Context, method, reqURL, apiToken, jsonBody string) (*mcp.CallToolResult, error) {
+	if !json.Valid([]byte(jsonBody)) {
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{&mcp.TextContent{Text: "Error: body must be valid JSON"}},
+			IsError: true,
+		}, nil
+	}
+	cfResp, err := cfapi.DoRequest(ctx, method, reqURL, apiToken, bytes.NewReader([]byte(jsonBody)))
+	if err != nil {
+		return nil, err
+	}
+	if !cfResp.Success {
+		return cfapi.APIErrorResult(cfResp.Errors), nil
+	}
+	return cfapi.FormatResult(cfResp)
+}
+
+// BulkWriteInput holds parameters for writing multiple KV pairs.
+type BulkWriteInput struct {
+	AccountID   string `json:"account_id"   jsonschema:"required,The ID of the Cloudflare account"`
+	NamespaceID string `json:"namespace_id" jsonschema:"required,The ID of the KV namespace"`
+	Pairs       string `json:"pairs"        jsonschema:"required,JSON array of key-value pair objects (key, value, optional expiration, metadata, base64)"`
+}
+
+func bulkWrite(ctx context.Context, _ *mcp.CallToolRequest, input BulkWriteInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	reqURL := cfapi.APIBase + "/accounts/" + input.AccountID + "/storage/kv/namespaces/" + input.NamespaceID + "/bulk"
+	result, err := bulkKVRequest(ctx, http.MethodPut, reqURL, apiToken, input.Pairs)
+	return result, nil, err
+}
+
 // RegisterWriteTools registers KV write (mutation) tools with the MCP server.
 //
 // It is called only when write mode is enabled via CLOUDFLARE_MCP_ENABLE_WRITE.
@@ -202,4 +238,9 @@ func RegisterWriteTools(server *mcp.Server) {
 		Name:        "rename_kv_namespace",
 		Description: "Rename a Workers KV namespace (change its title) by namespace ID.",
 	}, renameNamespace)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "write_kv_pairs_bulk",
+		Description: "Write multiple key-value pairs to a Workers KV namespace at once (PUT bulk). The pairs argument is a JSON array of pair objects (key, value, optional expiration/metadata/base64).",
+	}, bulkWrite)
 }

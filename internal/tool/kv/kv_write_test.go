@@ -106,3 +106,35 @@ func Test_renameNamespace_returns_error_when_token_is_not_set(t *testing.T) {
 		t.Error("got IsError = false, want true")
 	}
 }
+
+func Test_bulkWrite_returns_error_when_token_is_not_set(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := bulkWrite(context.Background(), &mcp.CallToolRequest{}, BulkWriteInput{AccountID: "acc123", NamespaceID: "ns123", Pairs: `[{"key":"k","value":"v"}]`})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}
+
+func Test_bulkWrite_returns_error_when_pairs_is_invalid_json(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "token")
+
+	// Act
+	result, _, err := bulkWrite(context.Background(), &mcp.CallToolRequest{}, BulkWriteInput{AccountID: "acc123", NamespaceID: "ns123", Pairs: "oops"})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}
