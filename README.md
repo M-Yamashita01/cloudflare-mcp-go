@@ -25,7 +25,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 
 ## Tools
 
-36 read-only tools grouped by domain, plus optional write tools (marked below) that are registered only when `CLOUDFLARE_MCP_ENABLE_WRITE=true`.
+37 read-only tools grouped by domain, plus optional write tools (marked below) that are registered only when `CLOUDFLARE_MCP_ENABLE_WRITE=true`.
 
 ### Zones & DNS
 
@@ -41,6 +41,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 | `get_dns_analytics_bytime` | DNS query analytics grouped by time interval (time-series). |
 | `export_dns_records` | Export all DNS records for a zone as a BIND zone file. |
 | `get_dns_record_usage` | DNS record usage counts for a zone (toward plan limits). |
+| `get_dns_settings` | Get a zone's DNS settings (Foundation DNS, multi-provider, nameservers, zone mode). |
 | `create_dns_record` | Create a DNS record (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `update_dns_record` | Update a DNS record, partial fields (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `delete_dns_record` | Delete a DNS record by ID (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
