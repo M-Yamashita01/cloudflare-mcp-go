@@ -47,6 +47,9 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 | Tool | Description |
 |------|-------------|
 | `list_ip_access_rules` | IP access rules that block, challenge, or allow IPs, CIDRs, ASNs, or countries. |
+| `create_ip_access_rule` | Create an IP access rule (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
+| `update_ip_access_rule` | Update an IP access rule's mode/notes (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
+| `delete_ip_access_rule` | Delete an IP access rule by ID (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `list_waf_managed_rulesets` | WAF managed rulesets entrypoint and which managed rulesets are enabled. |
 | `list_firewall_rules` | Custom firewall rules with expressions, actions, and priorities. |
 | `get_firewall_rule` | Full configuration of a specific firewall rule by ID. |

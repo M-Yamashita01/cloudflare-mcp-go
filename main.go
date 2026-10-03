@@ -55,6 +55,7 @@ func main() {
 		dns.RegisterWriteTools(server)
 		zone.RegisterWriteTools(server)
 		kv.RegisterWriteTools(server)
+		security.RegisterWriteTools(server)
 	}
 
 	log.Println("Starting Cloudflare MCP server (stdio)...")
