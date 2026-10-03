@@ -79,6 +79,22 @@ func dismissAccountInsight(ctx context.Context, _ *mcp.CallToolRequest, input Di
 	return result, nil, err
 }
 
+// StartAccountScanInput holds parameters for starting an on-demand account scan.
+type StartAccountScanInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+}
+
+func startAccountScan(ctx context.Context, _ *mcp.CallToolRequest, input StartAccountScanInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	url := cfapi.APIBase + "/accounts/" + input.AccountID + "/security-center/insights/scans"
+	result, err := sendWrite(ctx, http.MethodPost, url, apiToken, nil)
+	return result, nil, err
+}
+
 // RegisterWriteTools registers Security Center write (mutation) tools with the MCP server.
 //
 // It is called only when write mode is enabled via CLOUDFLARE_MCP_ENABLE_WRITE.
@@ -92,4 +108,9 @@ func RegisterWriteTools(server *mcp.Server) {
 		Name:        "dismiss_account_insight",
 		Description: "Dismiss (archive) or un-dismiss a Security Center insight in a Cloudflare account. The config argument is a JSON object with the dismiss state.",
 	}, dismissAccountInsight)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "start_account_scan",
+		Description: "Start an on-demand Security Center scan for a Cloudflare account.",
+	}, startAccountScan)
 }
