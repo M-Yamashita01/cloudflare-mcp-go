@@ -59,6 +59,22 @@ func Test_GetInput_has_zero_value_defaults(t *testing.T) {
 	}
 }
 
+func Test_listScanned_returns_error_when_token_is_not_set(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := listScanned(context.Background(), &mcp.CallToolRequest{}, ListScannedInput{ZoneID: "abc123"})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}
+
 func Test_listDNSSECZSK_returns_error_when_token_is_not_set(t *testing.T) {
 	// Arrange
 	t.Setenv("CLOUDFLARE_API_TOKEN", "")
