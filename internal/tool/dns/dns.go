@@ -177,6 +177,34 @@ func getAnalyticsByTime(ctx context.Context, _ *mcp.CallToolRequest, input GetAn
 	return result, nil, nil
 }
 
+// ExportInput holds parameters for exporting a zone's DNS records as a BIND file.
+type ExportInput struct {
+	ZoneID string `json:"zone_id" jsonschema:"required,The ID of the zone whose DNS records to export"`
+}
+
+func export(ctx context.Context, _ *mcp.CallToolRequest, input ExportInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	url := cfapi.APIBase + "/zones/" + input.ZoneID + "/dns_records/export"
+	body, status, err := cfapi.DoRawRequest(ctx, http.MethodGet, url, apiToken, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	if status != http.StatusOK {
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{&mcp.TextContent{Text: fmt.Sprintf("Cloudflare API error: status %d: %s", status, string(body))}},
+			IsError: true,
+		}, nil, nil
+	}
+
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{&mcp.TextContent{Text: string(body)}},
+	}, nil, nil
+}
+
 // RegisterTools registers DNS management tools with the MCP server.
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
@@ -198,4 +226,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "get_dns_analytics_bytime",
 		Description: "Get DNS query analytics for a Cloudflare zone grouped by time interval. Returns time-series data points (grouped by time_delta) for spotting trends and spikes.",
 	}, getAnalyticsByTime)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "export_dns_records",
+		Description: "Export all DNS records for a Cloudflare zone as a BIND zone file. Returns the raw BIND-format text.",
+	}, export)
 }
