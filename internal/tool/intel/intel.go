@@ -5,7 +5,9 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
+	"strings"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
@@ -319,6 +321,31 @@ func getIPLists(ctx context.Context, _ *mcp.CallToolRequest, input GetIPListsInp
 	return result, nil, err
 }
 
+// GetBulkDomainDetailsInput holds parameters for getting multiple domain details.
+type GetBulkDomainDetailsInput struct {
+	AccountID string   `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+	Domains   []string `json:"domains"    jsonschema:"required,List of domain names to look up"`
+}
+
+func getBulkDomainDetails(ctx context.Context, _ *mcp.CallToolRequest, input GetBulkDomainDetailsInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	var params []string
+	for _, d := range input.Domains {
+		params = append(params, "domain="+url.QueryEscape(d))
+	}
+	reqURL := cfapi.APIBase + "/accounts/" + input.AccountID + "/intel/domain/bulk"
+	if len(params) > 0 {
+		reqURL += "?" + strings.Join(params, "&")
+	}
+
+	result, err := doGet(ctx, reqURL, apiToken)
+	return result, nil, err
+}
+
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "get_ip_intel",
@@ -384,4 +411,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "get_ip_lists",
 		Description: "Get the available Cloudflare threat-intelligence IP lists for a Cloudflare account.",
 	}, getIPLists)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_bulk_domain_details",
+		Description: "Get threat intelligence details for multiple domains at once (GET bulk). Returns per-domain risk and category data.",
+	}, getBulkDomainDetails)
 }
