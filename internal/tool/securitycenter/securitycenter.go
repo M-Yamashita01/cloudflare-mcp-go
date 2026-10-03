@@ -115,6 +115,22 @@ func listAccountInsights(ctx context.Context, _ *mcp.CallToolRequest, input List
 	return result, nil, err
 }
 
+// GetAccountInsightCountsInput holds parameters for account insight counts by dimension.
+type GetAccountInsightCountsInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+	Dimension string `json:"dimension"  jsonschema:"required,The dimension to group by: class, severity, or type"`
+}
+
+func getAccountInsightCounts(ctx context.Context, _ *mcp.CallToolRequest, input GetAccountInsightCountsInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := doGet(ctx, cfapi.APIBase+"/accounts/"+input.AccountID+"/security-center/insights/"+input.Dimension, apiToken)
+	return result, nil, err
+}
+
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "list_security_insights",
@@ -130,4 +146,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "list_account_security_insights",
 		Description: "List Security Center insights for a Cloudflare account (account scope). Returns security issues with severity, type, and classification.",
 	}, listAccountInsights)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_account_insight_counts",
+		Description: "Get aggregated Security Center insight counts for a Cloudflare account by dimension (class, severity, or type).",
+	}, getAccountInsightCounts)
 }
