@@ -259,6 +259,33 @@ func getSettings(ctx context.Context, _ *mcp.CallToolRequest, input GetSettingsI
 	return result, nil, nil
 }
 
+// GetDNSSECInput holds parameters for retrieving DNSSEC details.
+type GetDNSSECInput struct {
+	ZoneID string `json:"zone_id" jsonschema:"required,The ID of the zone"`
+}
+
+func getDNSSEC(ctx context.Context, _ *mcp.CallToolRequest, input GetDNSSECInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	url := cfapi.APIBase + "/zones/" + input.ZoneID + "/dnssec"
+	cfResp, err := cfapi.DoRequest(ctx, http.MethodGet, url, apiToken, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	if !cfResp.Success {
+		return cfapi.APIErrorResult(cfResp.Errors), nil, nil
+	}
+
+	result, err := cfapi.FormatResult(cfResp)
+	if err != nil {
+		return nil, nil, err
+	}
+	return result, nil, nil
+}
+
 // RegisterTools registers DNS management tools with the MCP server.
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
@@ -295,4 +322,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "get_dns_settings",
 		Description: "Get DNS settings for a Cloudflare zone (e.g. Foundation DNS, multi-provider, nameservers, zone mode). Returns the zone's DNS configuration.",
 	}, getSettings)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_dnssec",
+		Description: "Get DNSSEC details for a Cloudflare zone (status, DS record, digest, key tag, algorithm). Useful for verifying DNSSEC configuration.",
+	}, getDNSSEC)
 }
