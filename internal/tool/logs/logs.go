@@ -270,6 +270,21 @@ func getRetentionFlag(ctx context.Context, _ *mcp.CallToolRequest, input GetRete
 	return result, nil, err
 }
 
+// ListLogDatasetsInput holds parameters for listing Logs Explorer datasets in a zone.
+type ListLogDatasetsInput struct {
+	ZoneID string `json:"zone_id" jsonschema:"required,The ID of the zone"`
+}
+
+func listLogDatasets(ctx context.Context, _ *mcp.CallToolRequest, input ListLogDatasetsInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := doGet(ctx, cfapi.APIBase+"/zones/"+input.ZoneID+"/logs/explorer/datasets", apiToken)
+	return result, nil, err
+}
+
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "get_log_by_rayid",
@@ -315,4 +330,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "get_log_retention_flag",
 		Description: "Get the log retention flag for a Cloudflare zone (whether Logpull log retention is enabled).",
 	}, getRetentionFlag)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "list_log_datasets",
+		Description: "List Logs Explorer datasets configured for a Cloudflare zone.",
+	}, listLogDatasets)
 }
