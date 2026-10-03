@@ -160,6 +160,21 @@ func getRole(ctx context.Context, _ *mcp.CallToolRequest, input GetRoleInput) (*
 	return result, nil, err
 }
 
+// ListSubscriptionsInput holds parameters for listing account subscriptions.
+type ListSubscriptionsInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+}
+
+func listSubscriptions(ctx context.Context, _ *mcp.CallToolRequest, input ListSubscriptionsInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := doGet(ctx, cfapi.APIBase+"/accounts/"+input.AccountID+"/subscriptions", apiToken)
+	return result, nil, err
+}
+
 // RegisterTools registers account management tools with the MCP server.
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
@@ -191,4 +206,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "get_account_role",
 		Description: "Get details of a specific Cloudflare account role by role ID (name, description, permissions).",
 	}, getRole)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "list_account_subscriptions",
+		Description: "List the subscriptions for a Cloudflare account. Returns subscription details including product, state, and price.",
+	}, listSubscriptions)
 }
