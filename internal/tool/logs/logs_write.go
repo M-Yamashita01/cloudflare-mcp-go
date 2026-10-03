@@ -223,6 +223,25 @@ func validateAccountLogpushDestination(ctx context.Context, _ *mcp.CallToolReque
 	return result, nil, err
 }
 
+// CheckAccountLogpushDestinationExistsInput holds parameters for checking a Logpush destination exists in an account.
+type CheckAccountLogpushDestinationExistsInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+	Config    string `json:"config"     jsonschema:"required,JSON object with the destination_conf to check"`
+}
+
+func checkAccountLogpushDestinationExists(ctx context.Context, _ *mcp.CallToolRequest, input CheckAccountLogpushDestinationExistsInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+	if result := invalidJSON("config", input.Config); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := sendWrite(ctx, http.MethodPost, cfapi.APIBase+"/accounts/"+input.AccountID+"/logpush/validate/destination/exists", apiToken, bytes.NewReader([]byte(input.Config)))
+	return result, nil, err
+}
+
 // RegisterWriteTools registers logs write (mutation) tools with the MCP server.
 //
 // It is called only when write mode is enabled via CLOUDFLARE_MCP_ENABLE_WRITE.
@@ -276,4 +295,9 @@ func RegisterWriteTools(server *mcp.Server) {
 		Name:        "validate_account_logpush_destination",
 		Description: "Validate a Logpush destination configuration for a Cloudflare account. The config argument is a JSON object with destination_conf.",
 	}, validateAccountLogpushDestination)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "check_account_logpush_destination_exists",
+		Description: "Check whether a Logpush destination already exists for a Cloudflare account. The config argument is a JSON object with destination_conf.",
+	}, checkAccountLogpushDestinationExists)
 }
