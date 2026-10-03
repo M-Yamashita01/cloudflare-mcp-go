@@ -512,6 +512,33 @@ func editDNSSEC(ctx context.Context, _ *mcp.CallToolRequest, input EditDNSSECInp
 	return result, nil, nil
 }
 
+// DeleteDNSSECInput holds parameters for deleting a zone's DNSSEC records.
+type DeleteDNSSECInput struct {
+	ZoneID string `json:"zone_id" jsonschema:"required,The ID of the zone"`
+}
+
+func deleteDNSSEC(ctx context.Context, _ *mcp.CallToolRequest, input DeleteDNSSECInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	url := cfapi.APIBase + "/zones/" + input.ZoneID + "/dnssec"
+	cfResp, err := cfapi.DoRequest(ctx, http.MethodDelete, url, apiToken, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	if !cfResp.Success {
+		return cfapi.APIErrorResult(cfResp.Errors), nil, nil
+	}
+
+	result, err := cfapi.FormatResult(cfResp)
+	if err != nil {
+		return nil, nil, err
+	}
+	return result, nil, nil
+}
+
 // RegisterWriteTools registers DNS write (mutation) tools with the MCP server.
 //
 // It is called only when write mode is enabled via CLOUDFLARE_MCP_ENABLE_WRITE,
@@ -571,4 +598,9 @@ func RegisterWriteTools(server *mcp.Server) {
 		Name:        "edit_dnssec",
 		Description: "Edit DNSSEC status for a Cloudflare zone. Set status to active or disabled, and optionally toggle multi-signer, presigned, or NSEC3.",
 	}, editDNSSEC)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "delete_dnssec",
+		Description: "Delete (disable and remove) DNSSEC records for a Cloudflare zone.",
+	}, deleteDNSSEC)
 }
