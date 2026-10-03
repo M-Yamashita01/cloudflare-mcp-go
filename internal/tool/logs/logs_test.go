@@ -413,3 +413,19 @@ func Test_listAuditLogProductCategories_returns_error_when_token_is_not_set(t *t
 		t.Error("got IsError = false, want true")
 	}
 }
+
+func Test_getAuditLogHistory_returns_error_when_token_is_not_set(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := getAuditLogHistory(context.Background(), &mcp.CallToolRequest{}, GetAuditLogHistoryInput{AccountID: "acc123", ID: "e1"})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}

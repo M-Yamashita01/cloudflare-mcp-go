@@ -508,6 +508,22 @@ func listAuditLogProductCategories(ctx context.Context, _ *mcp.CallToolRequest, 
 	return result, nil, err
 }
 
+// GetAuditLogHistoryInput holds parameters for getting an audit log entry's change history in an account.
+type GetAuditLogHistoryInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+	ID        string `json:"id"         jsonschema:"required,The ID of the audit log entry"`
+}
+
+func getAuditLogHistory(ctx context.Context, _ *mcp.CallToolRequest, input GetAuditLogHistoryInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := doGet(ctx, cfapi.APIBase+"/accounts/"+input.AccountID+"/logs/audit/"+input.ID+"/history", apiToken)
+	return result, nil, err
+}
+
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "get_log_by_rayid",
@@ -623,4 +639,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "list_account_audit_log_product_categories",
 		Description: "List the product categories available for filtering account audit logs (v2).",
 	}, listAuditLogProductCategories)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_account_audit_log_history",
+		Description: "Get the resource change history for a specific account audit log entry (v2) by entry ID.",
+	}, getAuditLogHistory)
 }
