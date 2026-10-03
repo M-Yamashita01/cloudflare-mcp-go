@@ -408,6 +408,22 @@ func updateLogpushJob(ctx context.Context, _ *mcp.CallToolRequest, input UpdateL
 	return result, nil, err
 }
 
+// DeleteLogpushJobInput holds parameters for deleting a Logpush job in a zone.
+type DeleteLogpushJobInput struct {
+	ZoneID string `json:"zone_id" jsonschema:"required,The ID of the zone"`
+	JobID  string `json:"job_id"  jsonschema:"required,The ID of the Logpush job to delete"`
+}
+
+func deleteLogpushJob(ctx context.Context, _ *mcp.CallToolRequest, input DeleteLogpushJobInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := sendWrite(ctx, http.MethodDelete, cfapi.APIBase+"/zones/"+input.ZoneID+"/logpush/jobs/"+input.JobID, apiToken, nil)
+	return result, nil, err
+}
+
 // RegisterWriteTools registers logs write (mutation) tools with the MCP server.
 //
 // It is called only when write mode is enabled via CLOUDFLARE_MCP_ENABLE_WRITE.
@@ -511,4 +527,9 @@ func RegisterWriteTools(server *mcp.Server) {
 		Name:        "update_logpush_job",
 		Description: "Update a Logpush job in a Cloudflare zone by job ID. The config argument is a JSON object of fields to change.",
 	}, updateLogpushJob)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "delete_logpush_job",
+		Description: "Delete a Logpush job from a Cloudflare zone by job ID.",
+	}, deleteLogpushJob)
 }
