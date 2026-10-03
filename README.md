@@ -25,7 +25,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 
 ## Tools
 
-67 read-only tools grouped by domain, plus optional write tools (marked below) that are registered only when `CLOUDFLARE_MCP_ENABLE_WRITE=true`.
+68 read-only tools grouped by domain, plus optional write tools (marked below) that are registered only when `CLOUDFLARE_MCP_ENABLE_WRITE=true`.
 
 ### Zones & DNS
 
@@ -115,6 +115,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 | `get_account_log_dataset` | Get a Logs Explorer dataset for an account by ID. |
 | `query_account_logs_sql` | Run a Logs Explorer SQL query for an account (GET). |
 | `list_account_log_files` | List stored log files for an account (start/end/bucket). |
+| `retrieve_account_logs` | Retrieve stored log entries (NDJSON) for an account. |
 
 ### Security Center
 
