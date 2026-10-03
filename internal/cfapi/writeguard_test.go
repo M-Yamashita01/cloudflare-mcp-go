@@ -42,7 +42,9 @@ func Test_WriteEnabled_covers_env_value_partitions(t *testing.T) {
 
 func Test_WriteEnabled_returns_false_when_env_is_unset(t *testing.T) {
 	t.Setenv(EnableWriteEnv, "")
-	os.Unsetenv(EnableWriteEnv)
+	if err := os.Unsetenv(EnableWriteEnv); err != nil {
+		t.Fatalf("unsetting %s: %v", EnableWriteEnv, err)
+	}
 
 	enabled, warn := WriteEnabled()
 
