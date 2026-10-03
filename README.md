@@ -57,6 +57,9 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 | `get_ruleset` | A specific ruleset with all its rules. |
 | `list_rate_limits` | Rate limiting rules: thresholds, match criteria, actions. |
 | `get_rate_limit` | Full configuration of a specific rate limiting rule by ID. |
+| `create_rate_limit` | Create a rate limit rule (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
+| `update_rate_limit` | Update a rate limit rule (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
+| `delete_rate_limit` | Delete a rate limit rule by ID (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 
 ### Security events & logs
 
