@@ -25,7 +25,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 
 ## Tools
 
-74 read-only tools grouped by domain, plus optional write tools (marked below) that are registered only when `CLOUDFLARE_MCP_ENABLE_WRITE=true`.
+75 read-only tools grouped by domain, plus optional write tools (marked below) that are registered only when `CLOUDFLARE_MCP_ENABLE_WRITE=true`.
 
 ### Zones & DNS
 
@@ -176,6 +176,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 | `get_account_details` | Get details of a specific account by ID. |
 | `list_account_members` | List members of an account (user, roles, status). |
 | `get_account_member` | Get an account member by ID (user, roles, policies). |
+| `list_account_roles` | List roles available in an account. |
 | `list_audit_logs` | Account audit log entries (who changed what and when). |
 | `list_user_audit_logs` | User-scoped audit log entries. |
 | `list_kv_namespaces` | Workers KV namespaces in an account. |
