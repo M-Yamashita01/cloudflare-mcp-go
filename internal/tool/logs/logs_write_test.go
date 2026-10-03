@@ -38,3 +38,19 @@ func Test_createAccountLogpushJob_returns_error_when_config_is_invalid_json(t *t
 		t.Error("got IsError = false, want true")
 	}
 }
+
+func Test_updateAccountLogpushJob_returns_error_when_token_is_not_set(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := updateAccountLogpushJob(context.Background(), &mcp.CallToolRequest{}, UpdateAccountLogpushJobInput{AccountID: "acc123", JobID: "1", Config: `{"enabled":true}`})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}
