@@ -100,3 +100,19 @@ func Test_GetValueInput_has_zero_value_defaults(t *testing.T) {
 		t.Error("got non-zero defaults, want zero values for GetValueInput")
 	}
 }
+
+func Test_getNamespace_returns_error_when_token_is_not_set(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := getNamespace(context.Background(), &mcp.CallToolRequest{}, GetNamespaceInput{AccountID: "acc123", NamespaceID: "ns123"})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}

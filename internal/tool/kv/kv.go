@@ -166,6 +166,33 @@ func getMetadata(ctx context.Context, _ *mcp.CallToolRequest, input GetMetadataI
 	return result, nil, nil
 }
 
+// GetNamespaceInput holds parameters for getting a KV namespace.
+type GetNamespaceInput struct {
+	AccountID   string `json:"account_id"   jsonschema:"required,The ID of the Cloudflare account"`
+	NamespaceID string `json:"namespace_id" jsonschema:"required,The ID of the KV namespace"`
+}
+
+func getNamespace(ctx context.Context, _ *mcp.CallToolRequest, input GetNamespaceInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	cfResp, err := cfapi.DoRequest(ctx, http.MethodGet, cfapi.APIBase+"/accounts/"+input.AccountID+"/storage/kv/namespaces/"+input.NamespaceID, apiToken, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	if !cfResp.Success {
+		return cfapi.APIErrorResult(cfResp.Errors), nil, nil
+	}
+
+	result, err := cfapi.FormatResult(cfResp)
+	if err != nil {
+		return nil, nil, err
+	}
+	return result, nil, nil
+}
+
 // RegisterTools registers KV management tools with the MCP server.
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
@@ -187,4 +214,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "get_kv_metadata",
 		Description: "Read the metadata associated with a key in a Workers KV namespace.",
 	}, getMetadata)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_kv_namespace",
+		Description: "Get a Workers KV namespace by ID. Returns the namespace details (ID, title, supports URL encoding).",
+	}, getNamespace)
 }
