@@ -422,3 +422,19 @@ func Test_validateLogpushDestination_returns_error_when_token_is_not_set(t *test
 		t.Error("got IsError = false, want true")
 	}
 }
+
+func Test_checkLogpushDestinationExists_returns_error_when_token_is_not_set(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := checkLogpushDestinationExists(context.Background(), &mcp.CallToolRequest{}, CheckLogpushDestinationExistsInput{ZoneID: "abc123", Config: `{"destination_conf":"s3://b"}`})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}

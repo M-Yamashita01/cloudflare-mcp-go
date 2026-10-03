@@ -141,6 +141,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 | `get_logpush_ownership_challenge` | Request a zone Logpush ownership challenge (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `validate_logpush_ownership` | Validate a zone Logpush ownership challenge (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `validate_logpush_destination` | Validate a zone Logpush destination (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
+| `check_logpush_destination_exists` | Check a zone Logpush destination exists (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 
 ### Security Center
 
