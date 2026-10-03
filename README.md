@@ -103,6 +103,7 @@ The server communicates over stdio and can be connected from any MCP client.
 |----------|----------|---------|
 | `CLOUDFLARE_API_TOKEN` | Yes | Authenticates all Cloudflare API calls. |
 | `CLOUDFLARE_ACCOUNT_ID` | No | Needed by account, audit log, KV, and intel tools. |
+| `CLOUDFLARE_MCP_ENABLE_WRITE` | No | Enables write (mutation) tools when set to exactly `true`. Unset or empty keeps them disabled (default); any other value is rejected (logged to stderr) and the server stays read-only. |
 
 ### Claude Code
 
