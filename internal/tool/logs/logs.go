@@ -240,6 +240,21 @@ func listLogpushDatasetFields(ctx context.Context, _ *mcp.CallToolRequest, input
 	return result, nil, err
 }
 
+// ListInstantLogsJobsInput holds parameters for listing Instant Logs jobs in a zone.
+type ListInstantLogsJobsInput struct {
+	ZoneID string `json:"zone_id" jsonschema:"required,The ID of the zone"`
+}
+
+func listInstantLogsJobs(ctx context.Context, _ *mcp.CallToolRequest, input ListInstantLogsJobsInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := doGet(ctx, cfapi.APIBase+"/zones/"+input.ZoneID+"/logpush/edge/jobs", apiToken)
+	return result, nil, err
+}
+
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "get_log_by_rayid",
@@ -275,4 +290,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "list_logpush_dataset_fields",
 		Description: "List the available Logpush fields for a specific dataset in a Cloudflare zone.",
 	}, listLogpushDatasetFields)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "list_instant_logs_jobs",
+		Description: "List Instant Logs (edge) jobs for a Cloudflare zone.",
+	}, listInstantLogsJobs)
 }
