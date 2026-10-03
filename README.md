@@ -25,7 +25,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 
 ## Tools
 
-40 read-only tools grouped by domain, plus optional write tools (marked below) that are registered only when `CLOUDFLARE_MCP_ENABLE_WRITE=true`.
+41 read-only tools grouped by domain, plus optional write tools (marked below) that are registered only when `CLOUDFLARE_MCP_ENABLE_WRITE=true`.
 
 ### Zones & DNS
 
@@ -88,6 +88,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 | `get_log_by_rayid` | Look up an HTTP request log entry by Cloudflare Ray ID. |
 | `list_received_logs` | Retrieve HTTP request logs for a time range (max 1h, data ≥5min old). |
 | `list_log_fields` | List available HTTP request log fields. |
+| `list_logpush_jobs` | List Logpush jobs for a zone (dataset, destination, enabled). |
 
 ### Security Center
 

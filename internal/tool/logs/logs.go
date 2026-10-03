@@ -164,6 +164,34 @@ func listFields(ctx context.Context, _ *mcp.CallToolRequest, input ListFieldsInp
 }
 
 // RegisterTools registers log investigation tools with the MCP server.
+// doGet performs a GET against the standard Cloudflare REST API and formats the
+// response. It is shared by the logs read tools.
+func doGet(ctx context.Context, url, apiToken string) (*mcp.CallToolResult, error) {
+	cfResp, err := cfapi.DoRequest(ctx, http.MethodGet, url, apiToken, nil)
+	if err != nil {
+		return nil, err
+	}
+	if !cfResp.Success {
+		return cfapi.APIErrorResult(cfResp.Errors), nil
+	}
+	return cfapi.FormatResult(cfResp)
+}
+
+// ListLogpushJobsInput holds parameters for listing Logpush jobs in a zone.
+type ListLogpushJobsInput struct {
+	ZoneID string `json:"zone_id" jsonschema:"required,The ID of the zone"`
+}
+
+func listLogpushJobs(ctx context.Context, _ *mcp.CallToolRequest, input ListLogpushJobsInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := doGet(ctx, cfapi.APIBase+"/zones/"+input.ZoneID+"/logpush/jobs", apiToken)
+	return result, nil, err
+}
+
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "get_log_by_rayid",
@@ -179,4 +207,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "list_log_fields",
 		Description: "List all available HTTP request log fields for a Cloudflare zone. Returns field names and descriptions. Use this to discover which fields can be specified when calling get_log_by_rayid or list_received_logs.",
 	}, listFields)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "list_logpush_jobs",
+		Description: "List Logpush jobs for a Cloudflare zone. Returns job details including dataset, destination, and enabled status.",
+	}, listLogpushJobs)
 }
