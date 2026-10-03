@@ -349,6 +349,21 @@ func listZoneShadowHosts(ctx context.Context, _ *mcp.CallToolRequest, input List
 	return result, nil, err
 }
 
+// GetSecurityTxtInput holds parameters for retrieving a zone's security.txt.
+type GetSecurityTxtInput struct {
+	ZoneID string `json:"zone_id" jsonschema:"required,The ID of the zone"`
+}
+
+func getSecurityTxt(ctx context.Context, _ *mcp.CallToolRequest, input GetSecurityTxtInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := doGet(ctx, cfapi.APIBase+"/zones/"+input.ZoneID+"/security-center/securitytxt", apiToken)
+	return result, nil, err
+}
+
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "list_security_insights",
@@ -439,4 +454,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "list_zone_partner_shadow_hosts",
 		Description: "List partner-discovered shadow hosts for a Cloudflare zone and partner.",
 	}, listZoneShadowHosts)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_securitytxt",
+		Description: "Get the security.txt configuration for a Cloudflare zone (security contact and disclosure policy).",
+	}, getSecurityTxt)
 }
