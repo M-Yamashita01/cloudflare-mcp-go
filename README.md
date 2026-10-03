@@ -55,6 +55,9 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 | `get_firewall_rule` | Full configuration of a specific firewall rule by ID. |
 | `list_rulesets` | All rulesets for a zone (metadata only). |
 | `get_ruleset` | A specific ruleset with all its rules. |
+| `create_ruleset` | Create a ruleset (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
+| `update_ruleset` | Update a ruleset's name/description/rules (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
+| `delete_ruleset` | Delete a ruleset by ID (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |
 | `list_rate_limits` | Rate limiting rules: thresholds, match criteria, actions. |
 | `get_rate_limit` | Full configuration of a specific rate limiting rule by ID. |
 | `create_rate_limit` | Create a rate limit rule (write; requires `CLOUDFLARE_MCP_ENABLE_WRITE=true`). |

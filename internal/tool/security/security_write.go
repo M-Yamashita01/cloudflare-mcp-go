@@ -194,6 +194,125 @@ func deleteRateLimit(ctx context.Context, _ *mcp.CallToolRequest, input DeleteRa
 	return sendWrite(ctx, http.MethodDelete, url, apiToken, nil)
 }
 
+// parseRules validates that rulesJSON is a JSON array and returns it as a raw
+// message. An empty string yields a nil message (no rules field).
+func parseRules(rulesJSON string) (json.RawMessage, error) {
+	if rulesJSON == "" {
+		return nil, nil
+	}
+	var rules []json.RawMessage
+	if err := json.Unmarshal([]byte(rulesJSON), &rules); err != nil {
+		return nil, fmt.Errorf("rules must be a JSON array: %w", err)
+	}
+	return json.RawMessage(rulesJSON), nil
+}
+
+// invalidRulesResult returns an error result describing a rules parse failure.
+func invalidRulesResult(err error) *mcp.CallToolResult {
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{&mcp.TextContent{Text: "Error: " + err.Error()}},
+		IsError: true,
+	}
+}
+
+// CreateRulesetInput holds parameters for creating a ruleset.
+type CreateRulesetInput struct {
+	ZoneID      string `json:"zone_id"     jsonschema:"required,The ID of the zone"`
+	Name        string `json:"name"        jsonschema:"required,Human-readable name of the ruleset"`
+	Kind        string `json:"kind"        jsonschema:"required,Ruleset kind: custom, root, zone, or managed"`
+	Phase       string `json:"phase"       jsonschema:"required,Phase the ruleset runs in (e.g. http_request_firewall_custom)"`
+	Description string `json:"description,omitempty" jsonschema:"Optional description of the ruleset"`
+	Rules       string `json:"rules,omitempty"       jsonschema:"JSON array of rule objects (each with expression, action, etc.)"`
+}
+
+func createRuleset(ctx context.Context, _ *mcp.CallToolRequest, input CreateRulesetInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	rules, err := parseRules(input.Rules)
+	if err != nil {
+		return invalidRulesResult(err), nil, nil
+	}
+
+	body := map[string]any{
+		"name":  input.Name,
+		"kind":  input.Kind,
+		"phase": input.Phase,
+	}
+	if input.Description != "" {
+		body["description"] = input.Description
+	}
+	if rules != nil {
+		body["rules"] = rules
+	}
+
+	payload, err := json.Marshal(body)
+	if err != nil {
+		return nil, nil, fmt.Errorf("marshaling request body: %w", err)
+	}
+
+	url := cfapi.APIBase + "/zones/" + input.ZoneID + "/rulesets"
+	return sendWrite(ctx, http.MethodPost, url, apiToken, bytes.NewReader(payload))
+}
+
+// UpdateRulesetInput holds parameters for updating a ruleset.
+type UpdateRulesetInput struct {
+	ZoneID      string `json:"zone_id"     jsonschema:"required,The ID of the zone"`
+	RulesetID   string `json:"ruleset_id"  jsonschema:"required,The ID of the ruleset to update"`
+	Name        string `json:"name,omitempty"        jsonschema:"New name for the ruleset"`
+	Description string `json:"description,omitempty" jsonschema:"New description for the ruleset"`
+	Rules       string `json:"rules,omitempty"       jsonschema:"JSON array of rule objects that replaces the ruleset's rules"`
+}
+
+func updateRuleset(ctx context.Context, _ *mcp.CallToolRequest, input UpdateRulesetInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	rules, err := parseRules(input.Rules)
+	if err != nil {
+		return invalidRulesResult(err), nil, nil
+	}
+
+	body := map[string]any{}
+	if input.Name != "" {
+		body["name"] = input.Name
+	}
+	if input.Description != "" {
+		body["description"] = input.Description
+	}
+	if rules != nil {
+		body["rules"] = rules
+	}
+
+	payload, err := json.Marshal(body)
+	if err != nil {
+		return nil, nil, fmt.Errorf("marshaling request body: %w", err)
+	}
+
+	url := cfapi.APIBase + "/zones/" + input.ZoneID + "/rulesets/" + input.RulesetID
+	return sendWrite(ctx, http.MethodPut, url, apiToken, bytes.NewReader(payload))
+}
+
+// DeleteRulesetInput holds parameters for deleting a ruleset.
+type DeleteRulesetInput struct {
+	ZoneID    string `json:"zone_id"    jsonschema:"required,The ID of the zone"`
+	RulesetID string `json:"ruleset_id" jsonschema:"required,The ID of the ruleset to delete"`
+}
+
+func deleteRuleset(ctx context.Context, _ *mcp.CallToolRequest, input DeleteRulesetInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	url := cfapi.APIBase + "/zones/" + input.ZoneID + "/rulesets/" + input.RulesetID
+	return sendWrite(ctx, http.MethodDelete, url, apiToken, nil)
+}
+
 // sendWrite executes a write request and formats the Cloudflare response.
 func sendWrite(ctx context.Context, method, url, apiToken string, body io.Reader) (*mcp.CallToolResult, any, error) {
 	cfResp, err := cfapi.DoRequest(ctx, method, url, apiToken, body)
@@ -244,4 +363,19 @@ func RegisterWriteTools(server *mcp.Server) {
 		Name:        "delete_rate_limit",
 		Description: "Delete a rate limit rule from a Cloudflare zone by rule ID.",
 	}, deleteRateLimit)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "create_ruleset",
+		Description: "Create a ruleset for a Cloudflare zone. Specify name, kind, and phase; rules is an optional JSON array of rule objects (expression, action, etc.).",
+	}, createRuleset)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "update_ruleset",
+		Description: "Update a ruleset by ID. Can change name, description, and/or replace rules (JSON array of rule objects). Use this to add or change custom firewall rules.",
+	}, updateRuleset)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "delete_ruleset",
+		Description: "Delete a ruleset from a Cloudflare zone by ruleset ID.",
+	}, deleteRuleset)
 }
