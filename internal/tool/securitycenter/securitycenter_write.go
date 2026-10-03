@@ -173,6 +173,27 @@ func updateZoneClassification(ctx context.Context, _ *mcp.CallToolRequest, input
 	return result, nil, err
 }
 
+// DismissZoneInsightInput holds parameters for dismissing a zone insight.
+type DismissZoneInsightInput struct {
+	ZoneID  string `json:"zone_id"  jsonschema:"required,The ID of the zone"`
+	IssueID string `json:"issue_id" jsonschema:"required,The ID of the Security Center issue/insight"`
+	Config  string `json:"config"   jsonschema:"required,JSON object with the dismiss state, e.g. {\"dismiss\":true}"`
+}
+
+func dismissZoneInsight(ctx context.Context, _ *mcp.CallToolRequest, input DismissZoneInsightInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+	if result := invalidJSON("config", input.Config); result != nil {
+		return result, nil, nil
+	}
+
+	url := cfapi.APIBase + "/zones/" + input.ZoneID + "/security-center/insights/" + input.IssueID + "/dismiss"
+	result, err := sendWrite(ctx, http.MethodPut, url, apiToken, bytes.NewReader([]byte(input.Config)))
+	return result, nil, err
+}
+
 // RegisterWriteTools registers Security Center write (mutation) tools with the MCP server.
 //
 // It is called only when write mode is enabled via CLOUDFLARE_MCP_ENABLE_WRITE.
@@ -211,4 +232,9 @@ func RegisterWriteTools(server *mcp.Server) {
 		Name:        "update_zone_insight_classification",
 		Description: "Update the classification (e.g. severity) of a Security Center insight in a zone. The config argument is a JSON object.",
 	}, updateZoneClassification)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "dismiss_zone_insight",
+		Description: "Dismiss (archive) or un-dismiss a Security Center insight in a zone. The config argument is a JSON object with the dismiss state.",
+	}, dismissZoneInsight)
 }
