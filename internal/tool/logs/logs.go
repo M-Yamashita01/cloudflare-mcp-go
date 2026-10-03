@@ -255,6 +255,21 @@ func listInstantLogsJobs(ctx context.Context, _ *mcp.CallToolRequest, input List
 	return result, nil, err
 }
 
+// GetRetentionFlagInput holds parameters for getting a zone's log retention flag.
+type GetRetentionFlagInput struct {
+	ZoneID string `json:"zone_id" jsonschema:"required,The ID of the zone"`
+}
+
+func getRetentionFlag(ctx context.Context, _ *mcp.CallToolRequest, input GetRetentionFlagInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := doGet(ctx, cfapi.APIBase+"/zones/"+input.ZoneID+"/logs/control/retention/flag", apiToken)
+	return result, nil, err
+}
+
 func RegisterTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "get_log_by_rayid",
@@ -295,4 +310,9 @@ func RegisterTools(server *mcp.Server) {
 		Name:        "list_instant_logs_jobs",
 		Description: "List Instant Logs (edge) jobs for a Cloudflare zone.",
 	}, listInstantLogsJobs)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_log_retention_flag",
+		Description: "Get the log retention flag for a Cloudflare zone (whether Logpull log retention is enabled).",
+	}, getRetentionFlag)
 }

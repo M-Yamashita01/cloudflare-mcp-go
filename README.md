@@ -25,7 +25,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 
 ## Tools
 
-45 read-only tools grouped by domain, plus optional write tools (marked below) that are registered only when `CLOUDFLARE_MCP_ENABLE_WRITE=true`.
+46 read-only tools grouped by domain, plus optional write tools (marked below) that are registered only when `CLOUDFLARE_MCP_ENABLE_WRITE=true`.
 
 ### Zones & DNS
 
@@ -93,6 +93,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 | `list_logpush_dataset_jobs` | List Logpush jobs for a specific dataset in a zone. |
 | `list_logpush_dataset_fields` | List available Logpush fields for a dataset in a zone. |
 | `list_instant_logs_jobs` | List Instant Logs (edge) jobs for a zone. |
+| `get_log_retention_flag` | Get a zone's log retention flag. |
 
 ### Security Center
 
