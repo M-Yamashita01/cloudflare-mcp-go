@@ -25,7 +25,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 
 ## Tools
 
-89 read-only tools grouped by domain, plus optional write tools (marked below) that are registered only when `CLOUDFLARE_MCP_ENABLE_WRITE=true`.
+90 read-only tools grouped by domain, plus optional write tools (marked below) that are registered only when `CLOUDFLARE_MCP_ENABLE_WRITE=true`.
 
 ### Zones & DNS
 
@@ -173,6 +173,7 @@ That is all — no manual clone or build required. `CLOUDFLARE_ACCOUNT_ID` is op
 | `get_attack_surface_issue_counts_by_severity` | Attack-surface issue counts by severity. |
 | `get_attack_surface_issue_counts_by_type` | Attack-surface issue counts by type. |
 | `get_ip_lists` | Available threat-intelligence IP lists for an account. |
+| `get_bulk_domain_details` | Threat intel details for multiple domains (GET bulk). |
 
 ### Account & audit
 
