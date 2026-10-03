@@ -261,6 +261,25 @@ func validateAccountLogpushOrigin(ctx context.Context, _ *mcp.CallToolRequest, i
 	return result, nil, err
 }
 
+// UpdateCMBConfigInput holds parameters for updating the Customer Metadata Boundary config in an account.
+type UpdateCMBConfigInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+	Config    string `json:"config"     jsonschema:"required,JSON object with the CMB config (e.g. regions)"`
+}
+
+func updateCMBConfig(ctx context.Context, _ *mcp.CallToolRequest, input UpdateCMBConfigInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+	if result := invalidJSON("config", input.Config); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := sendWrite(ctx, http.MethodPost, cfapi.APIBase+"/accounts/"+input.AccountID+"/logs/control/cmb/config", apiToken, bytes.NewReader([]byte(input.Config)))
+	return result, nil, err
+}
+
 // RegisterWriteTools registers logs write (mutation) tools with the MCP server.
 //
 // It is called only when write mode is enabled via CLOUDFLARE_MCP_ENABLE_WRITE.
@@ -324,4 +343,9 @@ func RegisterWriteTools(server *mcp.Server) {
 		Name:        "validate_account_logpush_origin",
 		Description: "Validate Logpush origin options (logpull_options) for a Cloudflare account. The config argument is a JSON object with logpull_options and dataset.",
 	}, validateAccountLogpushOrigin)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "update_cmb_config",
+		Description: "Update the Customer Metadata Boundary (CMB) config for a Cloudflare account. The config argument is a JSON object (e.g. regions).",
+	}, updateCMBConfig)
 }

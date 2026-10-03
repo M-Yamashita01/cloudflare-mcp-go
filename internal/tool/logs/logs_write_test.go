@@ -214,3 +214,19 @@ func Test_validateAccountLogpushOrigin_returns_error_when_token_is_not_set(t *te
 		t.Error("got IsError = false, want true")
 	}
 }
+
+func Test_updateCMBConfig_returns_error_when_token_is_not_set(t *testing.T) {
+	// Arrange
+	t.Setenv("CLOUDFLARE_API_TOKEN", "")
+
+	// Act
+	result, _, err := updateCMBConfig(context.Background(), &mcp.CallToolRequest{}, UpdateCMBConfigInput{AccountID: "acc123", Config: `{"regions":"eu"}`})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result.IsError {
+		t.Error("got IsError = false, want true")
+	}
+}
