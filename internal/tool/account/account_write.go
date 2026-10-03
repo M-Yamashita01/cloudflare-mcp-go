@@ -108,6 +108,26 @@ func addMember(ctx context.Context, _ *mcp.CallToolRequest, input AddMemberInput
 	return result, nil, err
 }
 
+// UpdateMemberInput holds parameters for updating an account member.
+type UpdateMemberInput struct {
+	AccountID string `json:"account_id" jsonschema:"required,The ID of the Cloudflare account"`
+	MemberID  string `json:"member_id"  jsonschema:"required,The ID of the account member"`
+	Config    string `json:"config"     jsonschema:"required,JSON object of member fields to update (roles or policies, status)"`
+}
+
+func updateMember(ctx context.Context, _ *mcp.CallToolRequest, input UpdateMemberInput) (*mcp.CallToolResult, any, error) {
+	apiToken := os.Getenv("CLOUDFLARE_API_TOKEN")
+	if result := cfapi.CheckToken(apiToken); result != nil {
+		return result, nil, nil
+	}
+	if result := invalidJSON("config", input.Config); result != nil {
+		return result, nil, nil
+	}
+
+	result, err := sendWrite(ctx, http.MethodPut, cfapi.APIBase+"/accounts/"+input.AccountID+"/members/"+input.MemberID, apiToken, bytes.NewReader([]byte(input.Config)))
+	return result, nil, err
+}
+
 // RegisterWriteTools registers account write (mutation) tools with the MCP server.
 //
 // It is called only when write mode is enabled via CLOUDFLARE_MCP_ENABLE_WRITE.
@@ -131,4 +151,9 @@ func RegisterWriteTools(server *mcp.Server) {
 		Name:        "add_account_member",
 		Description: "Add a member to a Cloudflare account. The config argument is a JSON object (email, roles or policies, status).",
 	}, addMember)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "update_account_member",
+		Description: "Update a Cloudflare account member by member ID. The config argument is a JSON object of fields to change (roles or policies, status).",
+	}, updateMember)
 }
