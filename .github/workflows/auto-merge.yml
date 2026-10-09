@@ -27,6 +27,10 @@ jobs:
           USE_USER_TOKEN: "false"
           TIER3_REGEX: '^\.github/workflows/release(-please)?\.yml$|^\.goreleaser'
           COOLING_HOURS: "72"
+          # Request a review from this account on PRs a human must merge so the
+          # GitHub Slack app sends a notification. The workflow token is the
+          # actor, so it is not a self-request and the notification fires.
+          REVIEWER: ${{ github.repository_owner }}
         run: |
           set -euo pipefail
           # On the self-hosted runner the user-authenticated gh token is used so
@@ -49,14 +53,26 @@ jobs:
             esac
 
             labels=$(jq -r '[.labels[].name] | join(",")' <<<"$info")
+
+            # Paused PRs are intentionally on hold: skip without requesting review.
             case ",$labels," in
-              *,ai-pause,*|*,needs-human,*|*,tier/3,*) continue ;;
+              *,ai-pause,*) continue ;;
+            esac
+
+            # Labelled for a human (needs-human or tier/3): request a review so the
+            # reviewer is notified, then skip auto-merge.
+            case ",$labels," in
+              *,needs-human,*|*,tier/3,*)
+                [ -n "$REVIEWER" ] && gh pr edit "$num" --add-reviewer "$REVIEWER" >/dev/null 2>&1 || true
+                continue
+                ;;
             esac
 
             # Tier 3 path guard: release/deploy/provider files require a human.
             if [ -n "$TIER3_REGEX" ]; then
               if jq -r '.files[].path' <<<"$info" | grep -Eq "$TIER3_REGEX"; then
                 gh pr edit "$num" --add-label tier/3 >/dev/null 2>&1 || true
+                [ -n "$REVIEWER" ] && gh pr edit "$num" --add-reviewer "$REVIEWER" >/dev/null 2>&1 || true
                 gh pr comment "$num" --body "Auto-merge skipped: this PR touches tier/3 paths (release/deploy/provider). A human needs to merge it." >/dev/null 2>&1 || true
                 continue
               fi
