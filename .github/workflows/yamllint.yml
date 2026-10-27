@@ -1,0 +1,36 @@
+# Managed by Terraform (github-repo-management). Do not edit here.
+name: yamllint
+
+# Lint only when YAML files change, so unrelated pushes do not trigger a run.
+on:
+  pull_request:
+    paths:
+      - "**.yml"
+      - "**.yaml"
+  push:
+    branches: [main]
+    paths:
+      - "**.yml"
+      - "**.yaml"
+
+permissions:
+  contents: read
+
+jobs:
+  yamllint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # Relaxed ruleset: only real problems (syntax errors, duplicate keys)
+      # fail the build; style issues stay at warning level so existing YAML is
+      # not forced to change. line-length and document-start are disabled, and
+      # truthy check-keys is off so GitHub Actions `on:` keys are not flagged.
+      - name: Run yamllint
+        run: |
+          pipx run yamllint \
+            -f github \
+            -d "{extends: relaxed, rules: {line-length: disable, document-start: disable, truthy: {check-keys: false}, comments: disable, comments-indentation: disable}}" \
+            .
