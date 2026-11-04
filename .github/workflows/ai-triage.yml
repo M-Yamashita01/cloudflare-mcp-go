@@ -30,7 +30,6 @@ jobs:
           mkdir -p /tmp/scan
           go install golang.org/x/vuln/cmd/govulncheck@latest
           "$(go env GOPATH)/bin/govulncheck" ./... > /tmp/scan/govulncheck.txt 2>&1 || true
-          
 
       - name: AI triage
         uses: anthropics/claude-code-action@v1
